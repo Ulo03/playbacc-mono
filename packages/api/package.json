@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun --bundle"
+    "build": "bun build src/index.ts --outdir dist --target bun --bundle",
+    "typecheck": "bunx tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@playbacc/shared": "workspace:*",
