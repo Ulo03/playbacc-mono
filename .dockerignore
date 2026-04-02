@@ -1,0 +1,23 @@
+.git
+.github
+
+**/node_modules
+node_modules
+
+**/.svelte-kit
+**/build
+**/dist
+
+**/.DS_Store
+**/*.log
+
+# editor
+.vscode
+.idea
+
+# local dev
+.env
+.env.*
+
+# unrelated dir
+web/
