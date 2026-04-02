@@ -15,7 +15,7 @@
     "lint:fix": "eslint . --fix",
     "check": "bun run fmt:check && bun run lint",
     "typecheck": "bun run --filter @playbacc/api typecheck && bun run --filter @playbacc/shared typecheck && bun run --filter @playbacc/web check",
-    "postinstall": "lefthook install"
+    "postinstall": "bun scripts/postinstall.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
