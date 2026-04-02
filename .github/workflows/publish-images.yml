@@ -3,8 +3,8 @@ name: Publish Docker images
 on:
   push:
     tags:
-      - 'api/v*'
-      - 'web/v*'
+      - "api/v*"
+      - "web/v*"
 
 permissions:
   contents: read
