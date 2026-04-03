@@ -4,7 +4,13 @@ import extractorSvelte from "@unocss/extractor-svelte";
 export default defineConfig({
   extractors: [extractorSvelte()],
   theme: {
-    colors: {},
+    colors: {
+      spotify: {
+        green: "#1DB954",
+        white: "#FFFFFF",
+        black: "#191414",
+      },
+    },
     borderRadius: {},
   },
   presets: [

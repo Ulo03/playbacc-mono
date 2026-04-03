@@ -11,12 +11,12 @@
   };
 </script>
 
-<main class="min-h-screen flex items-center justify-center">
-  <div class="w-96">
+<main class="min-h-screen flex items-center justify-center px-4 sm:px-6">
+  <div class="max-w-96 w-full">
     <IconButton
       Icon={SpotifyIcon}
       onclick={signInWithSpotify}
-      --btn-color="#1db954"
+      --btn-color="#1DB954"
     >
       Sign in with Spotify
     </IconButton>
