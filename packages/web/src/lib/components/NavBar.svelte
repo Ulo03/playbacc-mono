@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { DropdownMenu } from "bits-ui";
+  import { User as UserIcon, Settings, LogOut } from "lucide-svelte";
   import { authClient } from "$lib/auth-client";
   import UserAvatar from "./UserAvatar.svelte";
   import type { User } from "@playbacc/shared";
@@ -56,17 +57,7 @@
             class="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-neutral-300 outline-none focus:bg-neutral-800 hover:bg-neutral-800"
             onSelect={() => goto(`/user/${user.username}`)}
           >
-            <svg
-              class="size-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle cx="12" cy="8" r="4" /><path
-                d="M5 20c0-4 3-7 7-7s7 3 7 7"
-              />
-            </svg>
+            <UserIcon class="size-3.5" />
             My Profile
           </DropdownMenu.Item>
         {/if}
@@ -75,18 +66,7 @@
           class="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-neutral-300 outline-none focus:bg-neutral-800 hover:bg-neutral-800"
           onSelect={() => goto("/settings")}
         >
-          <svg
-            class="size-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="12" r="3" />
-            <path
-              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-            />
-          </svg>
+          <Settings class="size-3.5" />
           Settings
         </DropdownMenu.Item>
 
@@ -96,17 +76,7 @@
           class="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-red-400 outline-none focus:bg-neutral-800 hover:bg-neutral-800"
           onSelect={signOut}
         >
-          <svg
-            class="size-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
+          <LogOut class="size-3.5" />
           Sign Out
         </DropdownMenu.Item>
       </DropdownMenu.Content>

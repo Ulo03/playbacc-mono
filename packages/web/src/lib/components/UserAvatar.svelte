@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { User } from "lucide-svelte";
+
   type Props = {
     src: string | null;
     alt: string;
@@ -16,15 +18,6 @@
     role="img"
     aria-label={alt}
   >
-    <svg
-      class="h-1/2 w-1/2 text-neutral-500"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M5 20c0-4 3-7 7-7s7 3 7 7" />
-    </svg>
+    <User class="h-1/2 w-1/2 text-neutral-500" />
   </div>
 {/if}

@@ -23,27 +23,6 @@
       @{profile.displayUsername ?? profile.username}
     </p>
     <p class="mt-2 text-xs text-neutral-600">Joined {joinedDate}</p>
-
-    {#if profile.isOwner}
-      <a
-        href="/settings"
-        class="mt-3 inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300"
-      >
-        <svg
-          class="size-3.5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-          />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-        Edit settings
-      </a>
-    {/if}
   </div>
 
   <hr class="my-6 border-neutral-800 sm:my-8" />
