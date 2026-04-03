@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-playbacc}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-playbacc}
+      POSTGRES_DB: ${DB_NAME:-playbacc}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pgweb:
+    image: sosedoff/pgweb
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-playbacc}:${DB_PASSWORD:-playbacc}@postgres:5432/${DB_NAME:-playbacc}?sslmode=disable
+    ports:
+      - "8081:8081"
+
+volumes:
+  pgdata:

@@ -16,3 +16,5 @@
 # misc
 **/.idea
 bun.lock
+.infisical.json
+docs/superpowers
