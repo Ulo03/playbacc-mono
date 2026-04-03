@@ -1,11 +1,18 @@
 <script lang="ts">
   import { authClient } from "$lib/auth-client";
 
-  const signInWithSpotify = () => {
-    authClient.signIn.social({
+  const signInWithSpotify = async () => {
+    const { data, error } = await authClient.signIn.social({
       provider: "spotify",
-      callbackURL: "/",
+      callbackURL: import.meta.env.PUBLIC_WEB_URL ?? "http://127.0.0.1:5173",
     });
+    if (error) {
+      console.error("Sign-in error:", error);
+      return;
+    }
+    if (data?.url) {
+      window.location.href = data.url;
+    }
   };
 </script>
 
