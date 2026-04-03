@@ -36,6 +36,7 @@ ENV NODE_ENV=production
 RUN addgroup -S app && adduser -S app -G app
 
 COPY --from=builder /app/packages/api/dist ./dist
+COPY --from=builder /app/packages/api/drizzle ./drizzle
 
 USER app
 EXPOSE 3000

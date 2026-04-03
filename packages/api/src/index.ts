@@ -1,9 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { env } from "./lib/env.js";
+import { runMigrations } from "./db/index.js";
 import { authRoutes } from "./routes/auth.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { inviteRoutes } from "./routes/invites.js";
+
+await runMigrations();
 
 const app = new Hono();
 

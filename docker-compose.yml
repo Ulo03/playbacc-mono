@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-playbacc}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-playbacc}
+      POSTGRES_DB: ${DB_NAME:-playbacc}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
