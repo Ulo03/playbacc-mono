@@ -1,6 +1,10 @@
+import { sequence } from "@sveltejs/kit/hooks";
 import type { Handle } from "@sveltejs/kit";
+import type { User, Session } from "@playbacc/shared";
 import { getTextDirection } from "$lib/paraglide/runtime";
 import { paraglideMiddleware } from "$lib/paraglide/server";
+
+const API_URL = process.env.PUBLIC_API_URL ?? "http://localhost:3000";
 
 const handleParaglide: Handle = ({ event, resolve }) =>
   paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -14,4 +18,37 @@ const handleParaglide: Handle = ({ event, resolve }) =>
     });
   });
 
-export const handle: Handle = handleParaglide;
+const handleAuth: Handle = async ({ event, resolve }) => {
+  const cookie = event.request.headers.get("cookie");
+
+  if (!cookie) {
+    event.locals.user = null;
+    event.locals.session = null;
+    return resolve(event);
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/auth/get-session`, {
+      headers: { cookie },
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as {
+        user: User;
+        session: Session;
+      } | null;
+      event.locals.user = data?.user ?? null;
+      event.locals.session = data?.session ?? null;
+    } else {
+      event.locals.user = null;
+      event.locals.session = null;
+    }
+  } catch {
+    event.locals.user = null;
+    event.locals.session = null;
+  }
+
+  return resolve(event);
+};
+
+export const handle: Handle = sequence(handleParaglide, handleAuth);
