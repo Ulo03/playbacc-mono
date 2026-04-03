@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Settings } from "lucide-svelte";
   import UserAvatar from "$lib/components/UserAvatar.svelte";
 
   let { data } = $props();
@@ -23,6 +24,16 @@
       @{profile.displayUsername ?? profile.username}
     </p>
     <p class="mt-2 text-xs text-neutral-600">Joined {joinedDate}</p>
+
+    {#if profile.isOwner}
+      <a
+        href="/settings"
+        class="mt-3 inline-flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300"
+      >
+        <Settings class="size-3.5" />
+        Settings
+      </a>
+    {/if}
   </div>
 
   <hr class="my-6 border-neutral-800 sm:my-8" />
