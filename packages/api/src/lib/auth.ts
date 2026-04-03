@@ -55,11 +55,11 @@ export const auth = betterAuth({
               .values({ id: 1, registrationMode: "open" });
           }
 
-          // Check if any users exist — if not, this is the first user, always allow
+          // Check if any users exist — if not, this is the first user, make admin
           const ctx = await auth.$context;
           const userCount = await ctx.adapter.count({ model: "user" });
           if (userCount === 0) {
-            return;
+            return { data: { ...user, role: "admin" } };
           }
 
           // Check registration mode
