@@ -16,7 +16,7 @@
   let isPublic = $state(data.user.isPublic ?? false);
 
   // Track the saved username to detect changes
-  const savedUsername = data.user.username;
+  const savedUsername = $derived(data.user.username);
 
   // Username validation state
   let usernameError = $state<string | null>(null);
