@@ -1,5 +1,7 @@
 <script lang="ts">
   import { authClient } from "$lib/auth-client";
+  import IconButton from "$lib/components/IconButton.svelte";
+  import SpotifyIcon from "$lib/assets/icons/SpotifyIcon.svelte";
 
   const signInWithSpotify = async () => {
     await authClient.signIn.social({
@@ -9,6 +11,14 @@
   };
 </script>
 
-<main>
-  <button onclick={signInWithSpotify}> Sign in with Spotify </button>
+<main class="min-h-screen flex items-center justify-center">
+  <div class="w-96">
+    <IconButton
+      Icon={SpotifyIcon}
+      onclick={signInWithSpotify}
+      --btn-color="#1db954"
+    >
+      Sign in with Spotify
+    </IconButton>
+  </div>
 </main>
