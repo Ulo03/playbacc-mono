@@ -1,4 +1,5 @@
 import { sequence } from "@sveltejs/kit/hooks";
+import { redirect } from "@sveltejs/kit";
 import type { Handle } from "@sveltejs/kit";
 import type { User, Session } from "@playbacc/shared";
 import { getTextDirection } from "$lib/paraglide/runtime";
@@ -46,6 +47,19 @@ const handleAuth: Handle = async ({ event, resolve }) => {
   } catch {
     event.locals.user = null;
     event.locals.session = null;
+  }
+
+  // Redirect to /settings if username is not set
+  const pathname = event.url.pathname;
+  if (
+    event.locals.user &&
+    !event.locals.user.username &&
+    pathname !== "/settings" &&
+    pathname !== "/login" &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/user")
+  ) {
+    redirect(302, "/settings");
   }
 
   return resolve(event);
