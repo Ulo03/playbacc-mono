@@ -7,9 +7,11 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 import sveltePlugin from "eslint-plugin-svelte";
 import svelteParser from "svelte-eslint-parser";
 
+import unocss from "@unocss/eslint-config/flat";
 import prettier from "eslint-config-prettier";
 
 export default [
+  unocss,
   {
     ignores: [
       "**/node_modules/**",
