@@ -1,5 +1,3 @@
-// packages/shared/src/types/index.ts
-
 export type User = {
   id: string;
   name: string;
@@ -8,8 +6,11 @@ export type User = {
   image: string | null;
   username: string | null;
   displayUsername: string | null;
-  isPublic: boolean;
+  isPublic: boolean | null;
   role: string | null;
+  banned: boolean | null;
+  banReason: string | null;
+  banExpires: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -21,6 +22,7 @@ export type Session = {
   ipAddress: string | null;
   userAgent: string | null;
   userId: string;
+  impersonatedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

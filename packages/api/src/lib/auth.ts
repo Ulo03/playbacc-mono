@@ -1,5 +1,3 @@
-// packages/api/src/lib/auth.ts
-
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { bearer, admin, username } from "better-auth/plugins";

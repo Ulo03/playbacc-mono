@@ -1,18 +1,18 @@
 import { Hono } from "hono";
-import { auth } from "../lib/auth.js";
+import * as v from "valibot";
 import { db } from "../db/index.js";
 import { appSettings } from "../db/schema/app.js";
 import { eq } from "drizzle-orm";
+import { requireAuth, requireAdmin } from "../lib/middleware.js";
 
 const settingsRoutes = new Hono();
 
-// GET /api/settings — any authenticated user can read
-settingsRoutes.get("/", async (c) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+const UpdateSettingsSchema = v.object({
+  registrationMode: v.picklist(["open", "invite"]),
+});
 
+// GET /api/settings — any authenticated user can read
+settingsRoutes.get("/", requireAuth, async (c) => {
   const settings = await db
     .select()
     .from(appSettings)
@@ -22,35 +22,28 @@ settingsRoutes.get("/", async (c) => {
 });
 
 // PATCH /api/settings — admin only
-settingsRoutes.patch("/", async (c) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  if (session.user.role !== "admin") {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-
-  const body = await c.req.json<{ registrationMode?: string }>();
-  const mode = body.registrationMode;
-
-  if (mode !== "open" && mode !== "invite") {
+settingsRoutes.patch("/", requireAdmin, async (c) => {
+  const body = await c.req.json();
+  const parsed = v.safeParse(UpdateSettingsSchema, body);
+  if (!parsed.success) {
     return c.json(
       { error: "Invalid registration mode. Must be 'open' or 'invite'" },
       400,
     );
   }
 
+  const { registrationMode } = parsed.output;
+
   const updated = await db
     .update(appSettings)
-    .set({ registrationMode: mode })
+    .set({ registrationMode })
     .where(eq(appSettings.id, 1))
     .returning();
 
   if (updated.length === 0) {
     const inserted = await db
       .insert(appSettings)
-      .values({ id: 1, registrationMode: mode })
+      .values({ id: 1, registrationMode })
       .returning();
     return c.json(inserted[0]);
   }
