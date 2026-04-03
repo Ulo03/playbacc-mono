@@ -1,4 +1,7 @@
 <script lang="ts">
+  import "@unocss/reset/tailwind.css";
+  import "virtual:uno.css";
+
   import { page } from "$app/state";
   import { locales, localizeHref } from "$lib/paraglide/runtime";
   import favicon from "$lib/assets/favicon.svg";
@@ -7,7 +10,9 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{@render children()}
+<div class="min-h-screen bg-neutral-950 text-neutral-100">
+  {@render children()}
+</div>
 
 <div style="display: none">
   {#each locales as locale (locale)}
