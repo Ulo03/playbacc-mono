@@ -52,11 +52,10 @@ profileRoutes.get("/:username", async (c) => {
     .where(eq(user.username, username))
     .limit(1);
 
-  if (rows.length === 0) {
+  const profile = rows[0];
+  if (!profile) {
     return c.json({ error: "User not found" }, 404);
   }
-
-  const profile = rows[0];
 
   // Check auth for access control
   const session = await auth.api
