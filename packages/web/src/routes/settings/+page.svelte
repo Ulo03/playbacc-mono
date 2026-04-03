@@ -161,20 +161,19 @@
 
 <main class="mx-auto max-w-[480px] px-4 py-6 sm:px-6 sm:py-10">
   <!-- User header (read-only) -->
-  <div class="mb-8 flex items-center gap-3 sm:gap-4">
+  <div class="mb-8 flex flex-col items-center text-center">
     <UserAvatar
       src={data.user.image}
       alt={data.user.name}
-      class="size-12 sm:size-16"
+      class="mb-3 size-20 sm:mb-4 sm:size-24"
     />
-    <div class="min-w-0">
-      <p class="truncate text-base font-semibold sm:text-lg">
-        {data.user.name}
+    <p class="text-xl font-bold sm:text-2xl">{data.user.name}</p>
+    {#if savedUsername}
+      <p class="mt-1 text-sm text-neutral-500">
+        @{data.user.displayUsername ?? savedUsername}
       </p>
-      <p class="truncate text-xs text-neutral-500 sm:text-sm">
-        {data.user.email}
-      </p>
-    </div>
+    {/if}
+    <p class="mt-1 text-xs text-neutral-600">{data.user.email}</p>
   </div>
 
   <!-- Username -->
