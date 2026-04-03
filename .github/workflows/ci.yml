@@ -23,8 +23,8 @@ jobs:
       - name: Format + Lint
         run: bun run check
 
-      - name: Prepare (generate Paraglide types)
-        run: cd packages/web && bun run prepare
+      - name: Prepare (generate Paraglide + SvelteKit types)
+        run: cd packages/web && bunx paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && bun run prepare
 
       - name: Typecheck (api/shared) + svelte-check (web)
         run: bun run typecheck
