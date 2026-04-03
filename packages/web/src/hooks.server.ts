@@ -4,7 +4,7 @@ import type { User, Session } from "@playbacc/shared";
 import { getTextDirection } from "$lib/paraglide/runtime";
 import { paraglideMiddleware } from "$lib/paraglide/server";
 
-const API_URL = process.env.PUBLIC_API_URL ?? "http://localhost:3000";
+const API_URL = process.env.PUBLIC_API_URL ?? "http://127.0.0.1:3000";
 
 const handleParaglide: Handle = ({ event, resolve }) =>
   paraglideMiddleware(event.request, ({ request, locale }) => {
