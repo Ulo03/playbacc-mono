@@ -173,7 +173,12 @@
         @{data.user.displayUsername ?? savedUsername}
       </p>
     {/if}
-    <p class="mt-1 text-xs text-neutral-600">{data.user.email}</p>
+    <p class="mt-2 text-xs text-neutral-600">
+      Joined {new Date(data.user.createdAt).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      })}
+    </p>
   </div>
 
   <!-- Username -->
