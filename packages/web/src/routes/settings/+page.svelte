@@ -141,13 +141,25 @@
       // Refresh server data
       await invalidateAll();
 
-      // If this was the first username set, the page will now show the profile link
+      // Reset validation states
+      usernameError = null;
+      usernameAvailable = null;
+      nameError = null;
+      saveError = null;
     } catch {
       saveError = "Something went wrong. Please try again.";
     } finally {
       saving = false;
     }
   };
+
+  // Track whether any field has changed
+  const hasChanges = $derived(
+    (!usernameUnchanged && username.trim() !== "") ||
+      name !== (data.user.name ?? "") ||
+      isPublic !== (data.user.isPublic ?? false) ||
+      (!savedUsername && username.trim() !== ""),
+  );
 
   // Derived states for username field styling
   const usernameBorderClass = $derived(
@@ -285,7 +297,7 @@
   <!-- Save button -->
   <Button.Root
     onclick={handleSave}
-    disabled={saving || !!usernameError || !!nameError}
+    disabled={saving || !!usernameError || !!nameError || !hasChanges}
     class="w-full rounded-md bg-green-500 px-4 py-3 text-sm text-black font-semibold transition-colors disabled:cursor-not-allowed hover:bg-green-400 disabled:opacity-50"
   >
     {saving ? "Saving..." : savedUsername ? "Save Changes" : "Save"}
