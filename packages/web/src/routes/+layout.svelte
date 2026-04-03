@@ -5,12 +5,18 @@
   import { page } from "$app/state";
   import { locales, localizeHref } from "$lib/paraglide/runtime";
   import favicon from "$lib/assets/favicon.svg";
+  import NavBar from "$lib/components/NavBar.svelte";
 
-  let { children } = $props();
+  let { data, children } = $props();
+
+  const isLoginPage = $derived(page.url.pathname === "/login");
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <div class="min-h-screen bg-neutral-950 text-neutral-100">
+  {#if data.user && !isLoginPage}
+    <NavBar user={data.user} />
+  {/if}
   {@render children()}
 </div>
 
