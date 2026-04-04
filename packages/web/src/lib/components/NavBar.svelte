@@ -32,7 +32,7 @@
 
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        class="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+        class="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <UserAvatar src={user.image} alt={user.name} class="size-8 sm:size-9" />
       </DropdownMenu.Trigger>

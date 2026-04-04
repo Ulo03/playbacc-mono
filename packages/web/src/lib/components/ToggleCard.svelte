@@ -23,7 +23,7 @@
     {checked}
     onCheckedChange={(v) => (checked = v)}
     class="h-5.5 w-10 inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors {checked
-      ? 'bg-green-500'
+      ? 'bg-primary'
       : 'bg-neutral-700'}"
   >
     <Switch.Thumb

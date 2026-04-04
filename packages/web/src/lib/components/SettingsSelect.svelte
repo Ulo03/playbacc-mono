@@ -23,7 +23,7 @@
   </p>
   <Select.Root type="single" bind:value>
     <Select.Trigger
-      class="w-full flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none focus:border-green-500"
+      class="w-full flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none focus:border-primary"
     >
       {selectedLabel}
       <ChevronDown class="size-4 text-neutral-500" />
@@ -37,7 +37,7 @@
           {#each options as opt (opt.value)}
             <Select.Item
               value={opt.value}
-              class="cursor-pointer rounded px-3 py-2 text-sm text-neutral-300 outline-none data-[highlighted]:bg-neutral-800 data-[state=checked]:text-green-400"
+              class="cursor-pointer rounded px-3 py-2 text-sm text-neutral-300 outline-none data-[highlighted]:bg-neutral-800 data-[state=checked]:text-primary"
             >
               {#snippet children({ selected })}
                 {selected ? "✓ " : ""}{opt.label}
