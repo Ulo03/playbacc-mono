@@ -14,11 +14,13 @@
   {...rest}
   class="group w-full inline-flex cursor-pointer items-center justify-center gap-3 border-3 border-[var(--btn-color)] px-5 py-2.5 duration-200 hover:bg-[var(--btn-color)] sm:py-3 {className}"
 >
-  <span
-    class="size-5 text-[var(--icon-color,var(--btn-color))] duration-200 group-hover:text-white"
-  >
-    <Icon />
-  </span>
+  {#if Icon}
+    <span
+      class="size-5 text-[var(--icon-color,var(--btn-color))] duration-200 group-hover:text-white"
+    >
+      <Icon />
+    </span>
+  {/if}
   <span
     class="text-sm text-[var(--btn-color)] duration-200 sm:text-base group-hover:text-white"
   >
