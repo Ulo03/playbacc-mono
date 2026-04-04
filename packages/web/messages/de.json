@@ -27,7 +27,6 @@
   "settings_save_changes": "Änderungen speichern",
   "settings_save": "Speichern",
   "settings_save_error": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-  "settings_joined": "Beigetreten {date}",
   "settings_language_label": "Sprache",
   "settings_time_format_label": "Zeitformat",
   "settings_time_format_12h": "12-Stunden",

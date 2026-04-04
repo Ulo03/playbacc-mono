@@ -27,7 +27,6 @@
   "settings_save_changes": "Save Changes",
   "settings_save": "Save",
   "settings_save_error": "Something went wrong. Please try again.",
-  "settings_joined": "Joined {date}",
   "settings_language_label": "Language",
   "settings_time_format_label": "Time format",
   "settings_time_format_12h": "12-hour",
