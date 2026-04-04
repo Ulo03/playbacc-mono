@@ -38,6 +38,5 @@
   "profile_listening_history_empty": "Listening history will appear here",
 
   "error_user_not_found": "User not found",
-  "error_failed_to_load_profile": "Failed to load profile",
   "error_go_home": "← Go home"
 }

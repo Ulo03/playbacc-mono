@@ -38,6 +38,5 @@
   "profile_listening_history_empty": "Hörverlauf wird hier angezeigt",
 
   "error_user_not_found": "Benutzer nicht gefunden",
-  "error_failed_to_load_profile": "Profil konnte nicht geladen werden",
   "error_go_home": "← Startseite"
 }
