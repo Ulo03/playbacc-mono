@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as m from "$lib/paraglide/messages";
   import { page } from "$app/state";
   import { UserX } from "lucide-svelte";
 </script>
@@ -8,10 +9,10 @@
     <UserX class="mb-4 size-16 text-neutral-700" />
     <h1 class="text-2xl font-bold sm:text-3xl">{page.status}</h1>
     <p class="mt-2 text-sm text-neutral-500">
-      {page.error?.message ?? "User not found"}
+      {page.error?.message ?? m.error_user_not_found()}
     </p>
     <a href="/" class="mt-6 text-sm text-green-400 hover:text-green-300">
-      &larr; Go home
+      {m.error_go_home()}
     </a>
   </div>
 </main>
