@@ -1,4 +1,44 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "hello_world": "Hello, {name} from en!"
+
+  "home_welcome": "Welcome, {name}",
+
+  "login_sign_in_spotify": "Sign in with Spotify",
+
+  "nav_my_profile": "My Profile",
+  "nav_settings": "Settings",
+  "nav_sign_out": "Sign Out",
+
+  "settings_username_label": "Username",
+  "settings_username_required": "*required",
+  "settings_username_placeholder": "Enter username",
+  "settings_username_available": "Username is available",
+  "settings_username_taken": "Username is already taken",
+  "settings_username_checking": "Checking...",
+  "settings_username_help": "3-20 characters, letters, numbers, underscores",
+  "settings_username_required_error": "Username is required",
+  "settings_name_label": "Name",
+  "settings_name_placeholder": "Your display name",
+  "settings_public_profile": "Public Profile",
+  "settings_public_profile_description": "Anyone can view your profile",
+  "settings_view_profile": "View your profile →",
+  "settings_set_username_hint": "Set a username to view your profile",
+  "settings_saving": "Saving...",
+  "settings_save_changes": "Save Changes",
+  "settings_save": "Save",
+  "settings_save_error": "Something went wrong. Please try again.",
+  "settings_joined": "Joined {date}",
+  "settings_language_label": "Language",
+  "settings_time_format_label": "Time format",
+  "settings_time_format_12h": "12-hour",
+  "settings_time_format_24h": "24-hour",
+  "settings_preferences_heading": "Preferences",
+
+  "profile_joined": "Joined {date}",
+  "profile_settings": "Settings",
+  "profile_listening_history_empty": "Listening history will appear here",
+
+  "error_user_not_found": "User not found",
+  "error_failed_to_load_profile": "Failed to load profile",
+  "error_go_home": "← Go home"
 }

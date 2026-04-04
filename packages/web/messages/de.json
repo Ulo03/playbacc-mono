@@ -1,4 +1,44 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "hello_world": "Hello, {name} from de!"
+
+  "home_welcome": "Willkommen, {name}",
+
+  "login_sign_in_spotify": "Mit Spotify anmelden",
+
+  "nav_my_profile": "Mein Profil",
+  "nav_settings": "Einstellungen",
+  "nav_sign_out": "Abmelden",
+
+  "settings_username_label": "Benutzername",
+  "settings_username_required": "*erforderlich",
+  "settings_username_placeholder": "Benutzername eingeben",
+  "settings_username_available": "Benutzername ist verfügbar",
+  "settings_username_taken": "Benutzername ist bereits vergeben",
+  "settings_username_checking": "Wird geprüft...",
+  "settings_username_help": "3–20 Zeichen, Buchstaben, Zahlen, Unterstriche",
+  "settings_username_required_error": "Benutzername ist erforderlich",
+  "settings_name_label": "Name",
+  "settings_name_placeholder": "Dein Anzeigename",
+  "settings_public_profile": "Öffentliches Profil",
+  "settings_public_profile_description": "Jeder kann dein Profil sehen",
+  "settings_view_profile": "Profil ansehen →",
+  "settings_set_username_hint": "Lege einen Benutzernamen fest, um dein Profil zu sehen",
+  "settings_saving": "Wird gespeichert...",
+  "settings_save_changes": "Änderungen speichern",
+  "settings_save": "Speichern",
+  "settings_save_error": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+  "settings_joined": "Beigetreten {date}",
+  "settings_language_label": "Sprache",
+  "settings_time_format_label": "Zeitformat",
+  "settings_time_format_12h": "12-Stunden",
+  "settings_time_format_24h": "24-Stunden",
+  "settings_preferences_heading": "Einstellungen",
+
+  "profile_joined": "Beigetreten {date}",
+  "profile_settings": "Einstellungen",
+  "profile_listening_history_empty": "Hörverlauf wird hier angezeigt",
+
+  "error_user_not_found": "Benutzer nicht gefunden",
+  "error_failed_to_load_profile": "Profil konnte nicht geladen werden",
+  "error_go_home": "← Startseite"
 }
