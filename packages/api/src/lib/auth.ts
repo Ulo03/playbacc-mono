@@ -35,6 +35,14 @@ export const auth = betterAuth({
         type: "boolean",
         defaultValue: false,
       },
+      locale: {
+        type: "string",
+        defaultValue: "en",
+      },
+      timeFormat: {
+        type: "string",
+        defaultValue: "12h",
+      },
     },
   },
 

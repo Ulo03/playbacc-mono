@@ -13,6 +13,8 @@ export type User = {
   banExpires: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  locale: string;
+  timeFormat: string;
 };
 
 export type Session = {

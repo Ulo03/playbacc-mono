@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as m from "$lib/paraglide/messages";
   import { authClient } from "$lib/auth-client";
   import IconButton from "$lib/components/IconButton.svelte";
   import SpotifyIcon from "$lib/assets/icons/SpotifyIcon.svelte";
@@ -18,7 +19,7 @@
       onclick={signInWithSpotify}
       --btn-color="#1DB954"
     >
-      Sign in with Spotify
+      {m.login_sign_in_spotify()}
     </IconButton>
   </div>
 </main>
