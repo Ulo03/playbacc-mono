@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as m from "$lib/paraglide/messages";
   import { goto } from "$app/navigation";
   import { DropdownMenu } from "bits-ui";
   import { User as UserIcon, Settings, LogOut } from "lucide-svelte";
@@ -58,7 +59,7 @@
             onSelect={() => goto(`/user/${user.username}`)}
           >
             <UserIcon class="size-3.5" />
-            My Profile
+            {m.nav_my_profile()}
           </DropdownMenu.Item>
         {/if}
 
@@ -67,7 +68,7 @@
           onSelect={() => goto("/settings")}
         >
           <Settings class="size-3.5" />
-          Settings
+          {m.nav_settings()}
         </DropdownMenu.Item>
 
         <DropdownMenu.Separator class="my-1 h-px bg-neutral-800" />
@@ -77,7 +78,7 @@
           onSelect={signOut}
         >
           <LogOut class="size-3.5" />
-          Sign Out
+          {m.nav_sign_out()}
         </DropdownMenu.Item>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
