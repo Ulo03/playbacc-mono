@@ -177,6 +177,7 @@
     <UserAvatar
       src={data.user.image}
       alt={data.user.name}
+      lazy
       class="mb-3 size-20 sm:mb-4 sm:size-24"
     />
     <p class="text-xl font-bold sm:text-2xl">{data.user.name}</p>

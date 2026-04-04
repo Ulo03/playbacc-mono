@@ -56,8 +56,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
     !event.locals.user.username &&
     pathname !== "/settings" &&
     pathname !== "/login" &&
-    !pathname.startsWith("/api") &&
-    !pathname.startsWith("/user")
+    !pathname.startsWith("/api")
   ) {
     redirect(302, "/settings");
   }

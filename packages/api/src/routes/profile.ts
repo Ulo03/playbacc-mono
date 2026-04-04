@@ -65,7 +65,8 @@ profileRoutes.get("/:username", async (c) => {
   const callerId = session?.user?.id ?? null;
   const isOwner = callerId === profile.id;
 
-  // Restricted profile: unauthenticated users get 404 (no leak)
+  // Restricted profiles are visible to any authenticated user,
+  // but unauthenticated users get 404 (no username leak)
   if (!profile.isPublic && !callerId) {
     return c.json({ error: "User not found" }, 404);
   }

@@ -17,6 +17,7 @@
     <UserAvatar
       src={profile.image}
       alt={profile.name}
+      lazy
       class="mb-3 size-20 sm:mb-4 sm:size-24"
     />
     <h1 class="text-xl font-bold sm:text-2xl">{profile.name}</h1>

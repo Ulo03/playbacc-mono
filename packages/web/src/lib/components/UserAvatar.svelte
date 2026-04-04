@@ -5,13 +5,19 @@
     src: string | null;
     alt: string;
     class?: string;
+    lazy?: boolean;
   };
 
-  let { src, alt, class: className = "" }: Props = $props();
+  let { src, alt, class: className = "", lazy = false }: Props = $props();
 </script>
 
 {#if src}
-  <img {src} {alt} class="rounded-full object-cover {className}" />
+  <img
+    {src}
+    {alt}
+    loading={lazy ? "lazy" : "eager"}
+    class="rounded-full object-cover {className}"
+  />
 {:else}
   <div
     class="flex items-center justify-center rounded-full bg-neutral-800 {className}"
