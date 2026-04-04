@@ -1,17 +1,19 @@
 <script lang="ts">
   import * as m from "$lib/paraglide/messages";
   import { invalidateAll } from "$app/navigation";
-  import { Button, Switch, Select, RadioGroup, Label } from "bits-ui";
-  import { ChevronDown } from "lucide-svelte";
+  import { Button } from "bits-ui";
   import { authClient } from "$lib/auth-client";
-  import UserAvatar from "$lib/components/UserAvatar.svelte";
-  import { formatMonthYear } from "$lib/utils/format-date";
   import {
     UsernameSchema,
     NameSchema,
     SUPPORTED_TIME_FORMATS,
   } from "@playbacc/shared";
   import * as v from "valibot";
+  import UserHeader from "$lib/components/UserHeader.svelte";
+  import FormField from "$lib/components/FormField.svelte";
+  import ToggleCard from "$lib/components/ToggleCard.svelte";
+  import SettingsSelect from "$lib/components/SettingsSelect.svelte";
+  import SettingsRadioGroup from "$lib/components/SettingsRadioGroup.svelte";
 
   let { data } = $props();
 
@@ -22,10 +24,15 @@
     { value: "de", label: "Deutsch" },
   ];
 
-  const TIME_FORMAT_LABELS: Record<string, () => string> = {
-    "12h": () => m.settings_time_format_12h(),
-    "24h": () => m.settings_time_format_24h(),
-  };
+  const timeFormatOptions = $derived(
+    SUPPORTED_TIME_FORMATS.map((fmt) => ({
+      value: fmt,
+      label:
+        fmt === "12h"
+          ? m.settings_time_format_12h()
+          : m.settings_time_format_24h(),
+    })),
+  );
 
   // Form state
   let username = $state(data.user.displayUsername ?? data.user.username ?? "");
@@ -61,7 +68,6 @@
   const usernameUnchanged = $derived(normalizedUsername === savedUsername);
 
   const validateAndCheckUsername = (value: string) => {
-    // Reset state
     usernameAvailable = null;
     usernameError = null;
 
@@ -69,19 +75,16 @@
       return;
     }
 
-    // Client-side validation first
     const result = v.safeParse(UsernameSchema, value);
     if (!result.success) {
       usernameError = result.issues[0]?.message ?? "Invalid username";
       return;
     }
 
-    // If unchanged from saved, don't check availability
     if (value.toLowerCase() === savedUsername) {
       return;
     }
 
-    // Debounced availability check
     clearTimeout(debounceTimer);
     checkingUsername = true;
     debounceTimer = setTimeout(async () => {
@@ -108,14 +111,12 @@
   const handleSave = async () => {
     saveError = null;
 
-    // Validate name
     const nameResult = v.safeParse(NameSchema, name);
     if (!nameResult.success) {
       nameError = nameResult.issues[0]?.message ?? "Invalid name";
       return;
     }
 
-    // Validate username if present
     if (username.trim()) {
       const usernameResult = v.safeParse(UsernameSchema, username);
       if (!usernameResult.success) {
@@ -124,7 +125,6 @@
       }
     }
 
-    // Username is required if not yet set
     if (!savedUsername && !username.trim()) {
       usernameError = m.settings_username_required_error();
       return;
@@ -132,7 +132,6 @@
 
     saving = true;
     try {
-      // Build update payload
       const updates: Record<string, unknown> = {};
 
       if (!usernameUnchanged && username.trim()) {
@@ -163,15 +162,12 @@
         }
       }
 
-      // Set locale cookie for immediate effect
       if (updates.locale) {
         document.cookie = `PARAGLIDE_LOCALE=${updates.locale};path=/;max-age=34560000;samesite=lax`;
       }
 
-      // Refresh server data
       await invalidateAll();
 
-      // Reset validation states
       usernameError = null;
       usernameAvailable = null;
       nameError = null;
@@ -183,7 +179,6 @@
     }
   };
 
-  // Track whether any field has changed
   const hasChanges = $derived(
     (!usernameUnchanged && username.trim() !== "") ||
       name !== (data.user.name ?? "") ||
@@ -193,7 +188,6 @@
       (!savedUsername && username.trim() !== ""),
   );
 
-  // Derived states for username field styling
   const usernameBorderClass = $derived(
     usernameError
       ? "border-2 border-red-500"
@@ -201,190 +195,83 @@
         ? "border-2 border-green-500"
         : "border border-neutral-700",
   );
-
-  const selectedLocaleLabel = $derived(
-    LOCALE_OPTIONS.find((o) => o.value === locale)?.label ?? "English",
-  );
 </script>
 
 <main class="mx-auto max-w-[480px] px-4 py-6 sm:px-6 sm:py-10">
-  <!-- User header (read-only) -->
-  <div class="mb-8 flex flex-col items-center text-center">
-    <UserAvatar
-      src={data.user.image}
-      alt={data.user.name}
-      lazy
-      class="mb-3 size-20 sm:mb-4 sm:size-24"
-    />
-    <p class="text-xl font-bold sm:text-2xl">{data.user.name}</p>
-    {#if savedUsername}
-      <p class="mt-1 text-sm text-neutral-500">
-        @{data.user.displayUsername ?? savedUsername}
-      </p>
-    {/if}
-    <p class="mt-2 text-xs text-neutral-600">
-      {m.settings_joined({ date: formatMonthYear(data.user.createdAt) })}
-    </p>
-  </div>
+  <UserHeader
+    image={data.user.image}
+    name={data.user.name}
+    username={savedUsername}
+    displayUsername={data.user.displayUsername}
+    createdAt={data.user.createdAt}
+  />
 
-  <!-- Username -->
-  <div class="mb-4 sm:mb-5">
-    <label
-      for="username"
-      class="mb-1.5 block text-xs text-neutral-400 font-medium sm:text-sm"
-    >
-      {m.settings_username_label()}
+  <FormField
+    id="username"
+    label={m.settings_username_label()}
+    bind:value={username}
+    placeholder={m.settings_username_placeholder()}
+    error={usernameError}
+    borderClass={usernameBorderClass}
+    oninput={() => validateAndCheckUsername(username)}
+  >
+    {#snippet badge()}
       {#if !savedUsername}
         <span class="text-amber-500">{m.settings_username_required()}</span>
       {/if}
-    </label>
-    <input
-      id="username"
-      type="text"
-      bind:value={username}
-      oninput={() => validateAndCheckUsername(username)}
-      placeholder={m.settings_username_placeholder()}
-      class="w-full rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 {usernameBorderClass}"
-    />
-    {#if usernameError}
-      <p class="mt-1 text-xs text-red-400">{usernameError}</p>
-    {:else if usernameAvailable === true}
-      <p class="mt-1 text-xs text-green-400 font-medium">
-        {m.settings_username_available()}
-      </p>
-    {:else if checkingUsername}
-      <p class="mt-1 text-xs text-neutral-500">
-        {m.settings_username_checking()}
-      </p>
-    {:else if !usernameUnchanged || !savedUsername}
-      <p class="mt-1 text-xs text-neutral-600">
-        {m.settings_username_help()}
-      </p>
-    {/if}
-  </div>
+    {/snippet}
+    {#snippet hint()}
+      {#if usernameAvailable === true}
+        <p class="mt-1 text-xs text-green-400 font-medium">
+          {m.settings_username_available()}
+        </p>
+      {:else if checkingUsername}
+        <p class="mt-1 text-xs text-neutral-500">
+          {m.settings_username_checking()}
+        </p>
+      {:else if !usernameUnchanged || !savedUsername}
+        <p class="mt-1 text-xs text-neutral-600">
+          {m.settings_username_help()}
+        </p>
+      {/if}
+    {/snippet}
+  </FormField>
 
-  <!-- Name -->
-  <div class="mb-4 sm:mb-5">
-    <label
-      for="display-name"
-      class="mb-1.5 block text-xs text-neutral-400 font-medium sm:text-sm"
-    >
-      {m.settings_name_label()}
-    </label>
-    <input
-      id="display-name"
-      type="text"
-      bind:value={name}
-      oninput={() => validateName(name)}
-      placeholder={m.settings_name_placeholder()}
-      class="w-full border rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 {nameError
-        ? 'border-2 border-red-500'
-        : 'border-neutral-700'}"
-    />
-    {#if nameError}
-      <p class="mt-1 text-xs text-red-400">{nameError}</p>
-    {/if}
-  </div>
+  <FormField
+    id="display-name"
+    label={m.settings_name_label()}
+    bind:value={name}
+    placeholder={m.settings_name_placeholder()}
+    error={nameError}
+    oninput={() => validateName(name)}
+  />
 
-  <!-- Public profile toggle -->
-  <div
-    class="mb-6 flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 p-3"
-  >
-    <div class="mr-3 min-w-0">
-      <p class="text-sm font-medium">{m.settings_public_profile()}</p>
-      <p class="text-xs text-neutral-500">
-        {m.settings_public_profile_description()}
-      </p>
-    </div>
-    <Switch.Root
-      checked={isPublic}
-      onCheckedChange={(checked) => (isPublic = checked)}
-      class="h-5.5 w-10 inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors {isPublic
-        ? 'bg-green-500'
-        : 'bg-neutral-700'}"
-    >
-      <Switch.Thumb
-        class="pointer-events-none block size-4.5 rounded-full bg-white shadow transition-transform {isPublic
-          ? 'translate-x-[18px]'
-          : 'translate-x-[2px]'}"
-      />
-    </Switch.Root>
-  </div>
+  <ToggleCard
+    title={m.settings_public_profile()}
+    description={m.settings_public_profile_description()}
+    bind:checked={isPublic}
+  />
 
   <hr class="my-6 border-neutral-800" />
 
-  <!-- Preferences -->
   <h2 class="mb-4 text-sm text-neutral-400 font-medium sm:text-base">
     {m.settings_preferences_heading()}
   </h2>
 
-  <!-- Language -->
-  <div class="mb-4 sm:mb-5">
-    <p class="mb-1.5 text-xs text-neutral-400 font-medium sm:text-sm">
-      {m.settings_language_label()}
-    </p>
-    <Select.Root type="single" bind:value={locale}>
-      <Select.Trigger
-        class="w-full flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none focus:border-green-500"
-      >
-        {selectedLocaleLabel}
-        <ChevronDown class="size-4 text-neutral-500" />
-      </Select.Trigger>
-      <Select.Portal>
-        <Select.Content
-          class="z-50 border border-neutral-700 rounded-md bg-neutral-900 shadow-xl"
-          sideOffset={4}
-        >
-          <Select.Viewport class="p-1">
-            {#each LOCALE_OPTIONS as { value, label } (value)}
-              <Select.Item
-                {value}
-                class="cursor-pointer rounded px-3 py-2 text-sm text-neutral-300 outline-none data-[highlighted]:bg-neutral-800 data-[state=checked]:text-green-400"
-              >
-                {#snippet children({ selected })}
-                  {selected ? "✓ " : ""}{label}
-                {/snippet}
-              </Select.Item>
-            {/each}
-          </Select.Viewport>
-        </Select.Content>
-      </Select.Portal>
-    </Select.Root>
-  </div>
+  <SettingsSelect
+    label={m.settings_language_label()}
+    bind:value={locale}
+    options={LOCALE_OPTIONS}
+  />
 
-  <!-- Time format -->
-  <div class="mb-6">
-    <p class="mb-1.5 text-xs text-neutral-400 font-medium sm:text-sm">
-      {m.settings_time_format_label()}
-    </p>
-    <RadioGroup.Root bind:value={timeFormat} class="flex flex-col gap-2">
-      {#each SUPPORTED_TIME_FORMATS as fmt (fmt)}
-        {@const id = `time-format-${fmt}`}
-        <div class="flex items-center gap-2.5">
-          <RadioGroup.Item
-            {id}
-            value={fmt}
-            class="size-4.5 shrink-0 border rounded-full {timeFormat === fmt
-              ? 'border-green-500'
-              : 'border-neutral-600'}"
-          >
-            {#snippet children({ checked })}
-              {#if checked}
-                <div class="m-auto size-2.5 rounded-full bg-green-500"></div>
-              {/if}
-            {/snippet}
-          </RadioGroup.Item>
-          <Label.Root for={id} class="cursor-pointer text-sm text-neutral-300">
-            {TIME_FORMAT_LABELS[fmt]()}
-          </Label.Root>
-        </div>
-      {/each}
-    </RadioGroup.Root>
-  </div>
+  <SettingsRadioGroup
+    label={m.settings_time_format_label()}
+    bind:value={timeFormat}
+    options={timeFormatOptions}
+  />
 
   <hr class="my-6 border-neutral-800" />
 
-  <!-- Profile link (only if username is saved) -->
   {#if savedUsername}
     <a
       href="/user/{savedUsername}"
@@ -398,12 +285,10 @@
     </p>
   {/if}
 
-  <!-- Save error -->
   {#if saveError}
     <p class="mb-3 text-center text-sm text-red-400">{saveError}</p>
   {/if}
 
-  <!-- Save button -->
   <Button.Root
     onclick={handleSave}
     disabled={saving || !!usernameError || !!nameError || !hasChanges}
