@@ -49,6 +49,20 @@ const handleAuth: Handle = async ({ event, resolve }) => {
     event.locals.session = null;
   }
 
+  // Sync locale from DB to cookie
+  if (event.locals.user) {
+    const stored = event.locals.user.locale;
+    const current = event.cookies.get("PARAGLIDE_LOCALE");
+    if (stored !== current) {
+      event.cookies.set("PARAGLIDE_LOCALE", stored, {
+        path: "/",
+        maxAge: 34560000,
+        httpOnly: false,
+        sameSite: "lax",
+      });
+    }
+  }
+
   // Redirect to /settings if username is not set
   const pathname = event.url.pathname;
   if (
@@ -64,4 +78,5 @@ const handleAuth: Handle = async ({ event, resolve }) => {
   return resolve(event);
 };
 
-export const handle: Handle = sequence(handleParaglide, handleAuth);
+// handleAuth runs first to set cookie, then handleParaglide reads it
+export const handle: Handle = sequence(handleAuth, handleParaglide);
