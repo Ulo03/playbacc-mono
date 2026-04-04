@@ -34,3 +34,9 @@ Music listening history tracker. Self-hosted, AGPL-3.0.
 - `api` depends on `shared`
 - `web` depends on `shared`
 - `web` never imports from `api` — communicates via HTTP only
+
+## Components & styling
+
+Use **Bits UI** for headless primitives (Button, Switch, etc.) styled with UnoCSS.
+
+**Mobile-first throughout:** All components and layouts are designed for small screens first, then enhanced for larger viewports via `sm:` / `md:` UnoCSS breakpoint prefixes. Base styles target mobile — never write desktop-first CSS that gets overridden downward.
