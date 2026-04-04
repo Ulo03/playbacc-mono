@@ -26,3 +26,14 @@ export type Session = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type PublicProfile = {
+  id: string;
+  username: string;
+  displayUsername: string | null;
+  name: string;
+  image: string | null;
+  isPublic: boolean | null;
+  isOwner: boolean;
+  createdAt: Date;
+};
