@@ -11,7 +11,7 @@
 </script>
 
 <div
-  class="mb-6 flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 p-3"
+  class="mb-6 flex items-center justify-between border border-neutral-700 rounded-md bg-bg-surface p-3"
 >
   <div class="mr-3 min-w-0">
     <p class="text-sm font-medium">{title}</p>
