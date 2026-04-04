@@ -1,19 +1,38 @@
 <script lang="ts">
+  import * as m from "$lib/paraglide/messages";
   import { invalidateAll } from "$app/navigation";
-  import { Button, Switch } from "bits-ui";
+  import { Button, Switch, Select, RadioGroup, Label } from "bits-ui";
+  import { ChevronDown } from "lucide-svelte";
   import { authClient } from "$lib/auth-client";
   import UserAvatar from "$lib/components/UserAvatar.svelte";
-  import { UsernameSchema, NameSchema } from "@playbacc/shared";
+  import { formatMonthYear } from "$lib/utils/format-date";
+  import {
+    UsernameSchema,
+    NameSchema,
+    SUPPORTED_TIME_FORMATS,
+  } from "@playbacc/shared";
   import * as v from "valibot";
 
   let { data } = $props();
 
   const API_URL = import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:3000";
 
+  const LOCALE_OPTIONS = [
+    { value: "en", label: "English" },
+    { value: "de", label: "Deutsch" },
+  ];
+
+  const TIME_FORMAT_LABELS: Record<string, () => string> = {
+    "12h": () => m.settings_time_format_12h(),
+    "24h": () => m.settings_time_format_24h(),
+  };
+
   // Form state
   let username = $state(data.user.displayUsername ?? data.user.username ?? "");
   let name = $state(data.user.name ?? "");
   let isPublic = $state(data.user.isPublic ?? false);
+  let locale = $state(data.user.locale);
+  let timeFormat = $state(data.user.timeFormat);
 
   // Track the saved username to detect changes
   const savedUsername = $derived(data.user.username);
@@ -75,7 +94,7 @@
           const data = await res.json();
           usernameAvailable = data.available;
           if (!data.available) {
-            usernameError = "Username is already taken";
+            usernameError = m.settings_username_taken();
           }
         }
       } catch {
@@ -107,7 +126,7 @@
 
     // Username is required if not yet set
     if (!savedUsername && !username.trim()) {
-      usernameError = "Username is required";
+      usernameError = m.settings_username_required_error();
       return;
     }
 
@@ -125,17 +144,28 @@
       if (isPublic !== (data.user.isPublic ?? false)) {
         updates.isPublic = isPublic;
       }
+      if (locale !== data.user.locale) {
+        updates.locale = locale;
+      }
+      if (timeFormat !== data.user.timeFormat) {
+        updates.timeFormat = timeFormat;
+      }
 
       if (Object.keys(updates).length > 0) {
         const { error } = await authClient.updateUser(updates);
         if (error) {
           if (error.message?.includes("username") || error.status === 409) {
-            usernameError = "Username is already taken";
+            usernameError = m.settings_username_taken();
           } else {
             saveError = error.message ?? "Failed to save";
           }
           return;
         }
+      }
+
+      // Set locale cookie for immediate effect
+      if (updates.locale) {
+        document.cookie = `PARAGLIDE_LOCALE=${updates.locale};path=/;max-age=34560000;samesite=lax`;
       }
 
       // Refresh server data
@@ -147,7 +177,7 @@
       nameError = null;
       saveError = null;
     } catch {
-      saveError = "Something went wrong. Please try again.";
+      saveError = m.settings_save_error();
     } finally {
       saving = false;
     }
@@ -158,6 +188,8 @@
     (!usernameUnchanged && username.trim() !== "") ||
       name !== (data.user.name ?? "") ||
       isPublic !== (data.user.isPublic ?? false) ||
+      locale !== data.user.locale ||
+      timeFormat !== data.user.timeFormat ||
       (!savedUsername && username.trim() !== ""),
   );
 
@@ -168,6 +200,10 @@
       : usernameAvailable === true
         ? "border-2 border-green-500"
         : "border border-neutral-700",
+  );
+
+  const selectedLocaleLabel = $derived(
+    LOCALE_OPTIONS.find((o) => o.value === locale)?.label ?? "English",
   );
 </script>
 
@@ -187,10 +223,7 @@
       </p>
     {/if}
     <p class="mt-2 text-xs text-neutral-600">
-      Joined {new Date(data.user.createdAt).toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-      })}
+      {m.settings_joined({ date: formatMonthYear(data.user.createdAt) })}
     </p>
   </div>
 
@@ -200,9 +233,9 @@
       for="username"
       class="mb-1.5 block text-xs text-neutral-400 font-medium sm:text-sm"
     >
-      Username
+      {m.settings_username_label()}
       {#if !savedUsername}
-        <span class="text-amber-500">*required</span>
+        <span class="text-amber-500">{m.settings_username_required()}</span>
       {/if}
     </label>
     <input
@@ -210,20 +243,22 @@
       type="text"
       bind:value={username}
       oninput={() => validateAndCheckUsername(username)}
-      placeholder="Enter username"
+      placeholder={m.settings_username_placeholder()}
       class="w-full rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 {usernameBorderClass}"
     />
     {#if usernameError}
       <p class="mt-1 text-xs text-red-400">{usernameError}</p>
     {:else if usernameAvailable === true}
       <p class="mt-1 text-xs text-green-400 font-medium">
-        Username is available
+        {m.settings_username_available()}
       </p>
     {:else if checkingUsername}
-      <p class="mt-1 text-xs text-neutral-500">Checking...</p>
+      <p class="mt-1 text-xs text-neutral-500">
+        {m.settings_username_checking()}
+      </p>
     {:else if !usernameUnchanged || !savedUsername}
       <p class="mt-1 text-xs text-neutral-600">
-        3-20 characters, letters, numbers, underscores
+        {m.settings_username_help()}
       </p>
     {/if}
   </div>
@@ -234,14 +269,14 @@
       for="display-name"
       class="mb-1.5 block text-xs text-neutral-400 font-medium sm:text-sm"
     >
-      Name
+      {m.settings_name_label()}
     </label>
     <input
       id="display-name"
       type="text"
       bind:value={name}
       oninput={() => validateName(name)}
-      placeholder="Your display name"
+      placeholder={m.settings_name_placeholder()}
       class="w-full border rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 {nameError
         ? 'border-2 border-red-500'
         : 'border-neutral-700'}"
@@ -256,8 +291,10 @@
     class="mb-6 flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 p-3"
   >
     <div class="mr-3 min-w-0">
-      <p class="text-sm font-medium">Public Profile</p>
-      <p class="text-xs text-neutral-500">Anyone can view your profile</p>
+      <p class="text-sm font-medium">{m.settings_public_profile()}</p>
+      <p class="text-xs text-neutral-500">
+        {m.settings_public_profile_description()}
+      </p>
     </div>
     <Switch.Root
       checked={isPublic}
@@ -276,17 +313,88 @@
 
   <hr class="my-6 border-neutral-800" />
 
+  <!-- Preferences -->
+  <h2 class="mb-4 text-sm text-neutral-400 font-medium sm:text-base">
+    {m.settings_preferences_heading()}
+  </h2>
+
+  <!-- Language -->
+  <div class="mb-4 sm:mb-5">
+    <p class="mb-1.5 text-xs text-neutral-400 font-medium sm:text-sm">
+      {m.settings_language_label()}
+    </p>
+    <Select.Root type="single" bind:value={locale}>
+      <Select.Trigger
+        class="w-full flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 px-3 py-2.5 text-sm text-neutral-100 outline-none focus:border-green-500"
+      >
+        {selectedLocaleLabel}
+        <ChevronDown class="size-4 text-neutral-500" />
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Content
+          class="z-50 border border-neutral-700 rounded-md bg-neutral-900 shadow-xl"
+          sideOffset={4}
+        >
+          <Select.Viewport class="p-1">
+            {#each LOCALE_OPTIONS as { value, label } (value)}
+              <Select.Item
+                {value}
+                class="cursor-pointer rounded px-3 py-2 text-sm text-neutral-300 outline-none data-[highlighted]:bg-neutral-800 data-[state=checked]:text-green-400"
+              >
+                {#snippet children({ selected })}
+                  {selected ? "✓ " : ""}{label}
+                {/snippet}
+              </Select.Item>
+            {/each}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
+  </div>
+
+  <!-- Time format -->
+  <div class="mb-6">
+    <p class="mb-1.5 text-xs text-neutral-400 font-medium sm:text-sm">
+      {m.settings_time_format_label()}
+    </p>
+    <RadioGroup.Root bind:value={timeFormat} class="flex flex-col gap-2">
+      {#each SUPPORTED_TIME_FORMATS as fmt (fmt)}
+        {@const id = `time-format-${fmt}`}
+        <div class="flex items-center gap-2.5">
+          <RadioGroup.Item
+            {id}
+            value={fmt}
+            class="size-4.5 shrink-0 border rounded-full {timeFormat === fmt
+              ? 'border-green-500'
+              : 'border-neutral-600'}"
+          >
+            {#snippet children({ checked })}
+              {#if checked}
+                <div class="m-auto size-2.5 rounded-full bg-green-500"></div>
+              {/if}
+            {/snippet}
+          </RadioGroup.Item>
+          <Label.Root for={id} class="cursor-pointer text-sm text-neutral-300">
+            {TIME_FORMAT_LABELS[fmt]()}
+          </Label.Root>
+        </div>
+      {/each}
+    </RadioGroup.Root>
+  </div>
+
+  <hr class="my-6 border-neutral-800" />
+
   <!-- Profile link (only if username is saved) -->
   {#if savedUsername}
     <a
       href="/user/{savedUsername}"
       class="mb-4 block text-center text-sm text-green-400 hover:text-green-300"
     >
-      View your profile &rarr;
+      {m.settings_view_profile()}
     </a>
   {:else}
     <p class="mb-4 text-center text-xs text-neutral-600 italic">
-      Set a username to view your profile
+      {m.settings_set_username_hint()}
     </p>
   {/if}
 
@@ -301,6 +409,10 @@
     disabled={saving || !!usernameError || !!nameError || !hasChanges}
     class="w-full rounded-md bg-green-500 px-4 py-3 text-sm text-black font-semibold transition-colors disabled:cursor-not-allowed hover:bg-green-400 disabled:opacity-50"
   >
-    {saving ? "Saving..." : savedUsername ? "Save Changes" : "Save"}
+    {saving
+      ? m.settings_saving()
+      : savedUsername
+        ? m.settings_save_changes()
+        : m.settings_save()}
   </Button.Root>
 </main>
