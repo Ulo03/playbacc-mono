@@ -24,12 +24,12 @@
           {id}
           value={opt.value}
           class="size-4.5 shrink-0 border rounded-full {value === opt.value
-            ? 'border-primary'
+            ? 'border-pb-primary'
             : 'border-neutral-600'}"
         >
           {#snippet children({ checked })}
             {#if checked}
-              <div class="m-auto size-2.5 rounded-full bg-primary"></div>
+              <div class="m-auto size-2.5 rounded-full bg-pb-primary"></div>
             {/if}
           {/snippet}
         </RadioGroup.Item>

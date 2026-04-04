@@ -192,7 +192,7 @@
     usernameError
       ? "border-2 border-red-500"
       : usernameAvailable === true
-        ? "border-2 border-primary"
+        ? "border-2 border-pb-primary"
         : "border border-neutral-700",
   );
 </script>
@@ -222,7 +222,7 @@
     {/snippet}
     {#snippet hint()}
       {#if usernameAvailable === true}
-        <p class="mt-1 text-xs text-primary font-medium">
+        <p class="mt-1 text-xs text-pb-primary font-medium">
           {m.settings_username_available()}
         </p>
       {:else if checkingUsername}
@@ -275,7 +275,7 @@
   {#if savedUsername}
     <a
       href="/user/{savedUsername}"
-      class="mb-4 block text-center text-sm text-primary hover:text-primary-light"
+      class="mb-4 block text-center text-sm text-pb-primary hover:text-pb-primary-light"
     >
       {m.settings_view_profile()}
     </a>
@@ -292,7 +292,7 @@
   <Button.Root
     onclick={handleSave}
     disabled={saving || !!usernameError || !!nameError || !hasChanges}
-    class="w-full rounded-md bg-primary px-4 py-3 text-sm text-black font-semibold transition-colors disabled:cursor-not-allowed hover:bg-primary-light disabled:opacity-50"
+    class="w-full rounded-md bg-pb-primary px-4 py-3 text-sm text-black font-semibold transition-colors disabled:cursor-not-allowed hover:bg-pb-primary-light disabled:opacity-50"
   >
     {saving
       ? m.settings_saving()
