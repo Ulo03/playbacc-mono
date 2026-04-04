@@ -17,8 +17,15 @@ export const NameSchema = v.pipe(
   v.maxLength(50, "Must be at most 50 characters"),
 );
 
+export const LocaleSchema = v.picklist(["en", "de"]);
+
+export const SUPPORTED_TIME_FORMATS = ["12h", "24h"] as const;
+export const TimeFormatSchema = v.picklist(SUPPORTED_TIME_FORMATS);
+
 export const UpdateProfileSchema = v.object({
   username: v.optional(UsernameSchema),
   name: v.optional(NameSchema),
   isPublic: v.optional(v.boolean()),
+  locale: v.optional(LocaleSchema),
+  timeFormat: v.optional(TimeFormatSchema),
 });
