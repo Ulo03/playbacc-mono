@@ -26,11 +26,20 @@ Table "public"."user" {
   "email" text [not null]
   "emailVerified" boolean [not null, default: false]
   "image" text
-  "createdAt" timestamptz [not null, default: `now()`]
-  "updatedAt" timestamptz [not null]
-  // Additional fields (app-specific)
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+  // better-auth admin plugin fields
+  "role" text
+  "banned" boolean [default: false]
+  "banReason" text
+  "banExpires" timestamp
+  // better-auth username plugin fields
   "username" text [note: "MaxLength: 100"]
-  "isPublic" boolean [not null, default: true]
+  "displayUsername" text
+  // Additional fields (app-specific)
+  "isPublic" boolean [default: false]
+  "locale" text [not null, default: "en"]
+  "timeFormat" text [not null, default: "12h"]
 
   Indexes {
     (email) [unique]
@@ -40,13 +49,18 @@ Table "public"."user" {
 
 Table "public"."session" {
   "id" text [pk, not null]
-  "expiresAt" timestamptz [not null]
+  "expiresAt" timestamp [not null]
   "token" text [not null, unique]
-  "createdAt" timestamptz [not null, default: `now()`]
-  "updatedAt" timestamptz [not null]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null]
   "ipAddress" text
   "userAgent" text
   "userId" text [not null, ref: > "public"."user"."id", note: "OnDelete: Cascade"]
+  "impersonatedBy" text [note: "better-auth admin plugin"]
+
+  Indexes {
+    (userId) [name: "session_userId_idx"]
+  }
 }
 
 Table "public"."account" {
@@ -57,15 +71,15 @@ Table "public"."account" {
   "accessToken" text
   "refreshToken" text
   "idToken" text
-  "accessTokenExpiresAt" timestamptz
-  "refreshTokenExpiresAt" timestamptz
+  "accessTokenExpiresAt" timestamp
+  "refreshTokenExpiresAt" timestamp
   "scope" text
   "password" text
-  "createdAt" timestamptz [not null, default: `now()`]
-  "updatedAt" timestamptz [not null]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null]
 
   Indexes {
-    (providerId, accountId) [unique]
+    (userId) [name: "account_userId_idx"]
   }
 }
 
@@ -73,9 +87,13 @@ Table "public"."verification" {
   "id" text [pk, not null]
   "identifier" text [not null]
   "value" text [not null]
-  "expiresAt" timestamptz [not null]
-  "createdAt" timestamptz [not null, default: `now()`]
-  "updatedAt" timestamptz [not null]
+  "expiresAt" timestamp [not null]
+  "createdAt" timestamp [not null, default: `now()`]
+  "updatedAt" timestamp [not null, default: `now()`]
+
+  Indexes {
+    (identifier) [name: "verification_identifier_idx"]
+  }
 }
 
 // ──────────────────────────────────────────────
