@@ -1,8 +1,8 @@
-Enum "account_provider" {
+Enum "music"."account_provider" {
     "Spotify"
 }
 
-Enum "job_status" {
+Enum "music"."job_status" {
   "Queued"
   "Processing"
   "Completed"
@@ -10,14 +10,14 @@ Enum "job_status" {
   "Cancelled"
 }
 
-Enum "sync_status" {
+Enum "music"."sync_status" {
   "idle"
   "syncing"
   "failed"
 }
 
 // ──────────────────────────────────────────────
-// Better-auth managed tables
+// Better-auth managed tables (public schema)
 // ──────────────────────────────────────────────
 
 Table "public"."user" {
@@ -28,9 +28,18 @@ Table "public"."user" {
   "image" text
   "createdAt" timestamptz [not null, default: `now()`]
   "updatedAt" timestamptz [not null]
-  // Additional fields (app-specific)
+  // better-auth admin plugin fields
+  "role" text
+  "banned" boolean [default: false]
+  "banReason" text
+  "banExpires" timestamptz
+  // better-auth username plugin fields
   "username" text [note: "MaxLength: 100"]
-  "isPublic" boolean [not null, default: true]
+  "displayUsername" text
+  // Additional fields (app-specific)
+  "isPublic" boolean [default: false]
+  "locale" text [not null, default: "en"]
+  "timeFormat" text [not null, default: "12h"]
 
   Indexes {
     (email) [unique]
@@ -47,6 +56,11 @@ Table "public"."session" {
   "ipAddress" text
   "userAgent" text
   "userId" text [not null, ref: > "public"."user"."id", note: "OnDelete: Cascade"]
+  "impersonatedBy" text [note: "better-auth admin plugin"]
+
+  Indexes {
+    (userId) [name: "session_userId_idx"]
+  }
 }
 
 Table "public"."account" {
@@ -65,7 +79,7 @@ Table "public"."account" {
   "updatedAt" timestamptz [not null]
 
   Indexes {
-    (providerId, accountId) [unique]
+    (userId) [name: "account_userId_idx"]
   }
 }
 
@@ -75,27 +89,33 @@ Table "public"."verification" {
   "value" text [not null]
   "expiresAt" timestamptz [not null]
   "createdAt" timestamptz [not null, default: `now()`]
-  "updatedAt" timestamptz [not null]
-}
-
-// ──────────────────────────────────────────────
-// App-managed tables
-// ──────────────────────────────────────────────
-
-Table "public"."provider_sync_state" {
-  "user_id" text [not null, ref: > "public"."user"."id", note: "OnDelete: Cascade"]
-  "provider" account_provider [not null]
-  "last_synced_at" timestamptz [note: "UTC timestamp, played_at of most recent background-synced play"]
-  "sync_status" sync_status [not null, default: "idle", note: "Prevents concurrent syncs"]
-  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
-  "updated_at" timestamptz [not null, note: "UTC timestamp"]
+  "updatedAt" timestamptz [not null, default: `now()`]
 
   Indexes {
-    (user_id, provider) [pk, name: "provider_sync_state_pk"]
+    (identifier) [name: "verification_identifier_idx"]
   }
 }
 
-Table "public"."artists" {
+// ──────────────────────────────────────────────
+// App-managed tables (public schema)
+// ──────────────────────────────────────────────
+
+Table "public"."app_settings" {
+  "id" integer [pk, not null, default: 1]
+  "registration_mode" text [not null, default: "open"]
+}
+
+Table "public"."invites" {
+  "id" text [pk, not null]
+  "email" text [not null, unique]
+  "created_at" timestamptz [not null, default: `now()`]
+}
+
+// ──────────────────────────────────────────────
+// Music domain tables (music schema)
+// ──────────────────────────────────────────────
+
+Table "music"."artists" {
   "id" uuid [pk, not null]
   "name" text [not null, note: "MaxLength: 100"]
   "sort_name" text [note: "MaxLength: 100"]
@@ -109,7 +129,7 @@ Table "public"."artists" {
   }
 }
 
-Table "public"."albums" {
+Table "music"."albums" {
   "id" uuid [pk, not null]
   "title" text [not null, note: "MaxLength: 255"]
   "release_date" date
@@ -123,7 +143,7 @@ Table "public"."albums" {
   }
 }
 
-Table "public"."tracks" {
+Table "music"."tracks" {
   "id" uuid [pk, not null]
   "title" text [not null, note: "MaxLength: 255"]
   "duration_ms" integer
@@ -138,15 +158,180 @@ Table "public"."tracks" {
   }
 }
 
+Table "music"."plays" {
+  "id" bigint [pk, not null, increment, note: "Identity / BIGSERIAL-style key"]
+  "user_id" text [not null, ref: > "public"."user"."id", note: "OnDelete: Cascade"]
+  "track_id" uuid [not null, ref: > "music"."tracks"."id", note: "OnDelete: Restrict"]
+  "album_id" uuid [ref: > "music"."albums"."id", note: "OnDelete: Restrict"]
+  "import_job_id" uuid [ref: > "music"."import_jobs"."id", note: "OnDelete: Cascade"]
+  "played_at" timestamptz [not null, note: "UTC timestamp"]
+  "played_duration_ms" integer [not null]
+  "skipped" boolean [not null, default: false]
+  "provider" "music"."account_provider" [not null]
+  "deleted_at" timestamptz [note: "UTC timestamp, Soft delete - null if active"]
 
-Table "public"."import_jobs" {
+  Indexes {
+    (user_id, track_id, played_at) [unique, name: "no_duplicate_scrobbles", note: "WHERE deleted_at IS NULL"]
+    (user_id, played_at) [name: "idx_plays_user_time", note: "WHERE deleted_at IS NULL; played_at DESC"]
+    (album_id) [name: "idx_plays_album", note: "WHERE deleted_at IS NULL"]
+    (track_id) [name: "idx_plays_track", note: "WHERE deleted_at IS NULL"]
+    (import_job_id) [name: "idx_scrobbles_import", note: "WHERE deleted_at IS NULL"]
+    (deleted_at) [name: "idx_plays_deleted"]
+  }
+}
+
+Table "music"."track_artists" {
+  "track_id" uuid [not null, ref: > "music"."tracks"."id", note: "OnDelete: Cascade"]
+  "artist_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
+  "is_primary" boolean [not null, default: true]
+  "order" integer [not null]
+  "join_phrase" text [note: "MaxLength: 50"]
+
+  Indexes {
+    (track_id, artist_id) [pk, name: "track_artists_pk"]
+    (artist_id) [name: "idx_track_artists_reverse"]
+  }
+}
+
+Table "music"."track_albums" {
+  "track_id" uuid [not null, ref: > "music"."tracks"."id", note: "OnDelete: Cascade"]
+  "album_id" uuid [not null, ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
+  "disc_number" integer
+  "position" integer
+
+  Indexes {
+    (track_id, album_id) [pk, name: "track_albums_pk"]
+    (album_id) [name: "idx_track_albums_reverse"]
+  }
+}
+
+Table "music"."album_artists" {
+  "album_id" uuid [not null, ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
+  "artist_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
+  "is_primary" boolean [not null, default: true]
+  "order" integer [not null]
+
+  Indexes {
+    (album_id, artist_id) [pk, name: "album_artists_pk"]
+    (artist_id) [name: "idx_album_artists_reverse"]
+  }
+}
+
+Table "music"."artists_groups" {
+  "member_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
+  "group_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Restrict"]
+  "start_date" date
+  "end_date" date
+
+  Indexes {
+    (member_id, group_id) [pk, name: "artists_groups_pk"]
+    (group_id) [name: "idx_artists_groups_reverse"]
+  }
+}
+
+Table "music"."artists_alias" {
+  "id" uuid [pk, not null]
+  "artist_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
+  "alias" text [not null, note: "MaxLength: 100"]
+  "sort_name" text [note: "MaxLength: 100"]
+  "is_primary" boolean [not null]
+  "locale" text [note: "MaxLength: 10"]
+
+  Indexes {
+    (alias) [name: "idx_artist_alias_search"]
+    (artist_id, alias) [unique, name: "idx_artist_alias_unique"]
+  }
+}
+
+Table "music"."tracks_alias" {
+  "id" uuid [pk, not null]
+  "track_id" uuid [not null, ref: > "music"."tracks"."id", note: "OnDelete: Cascade"]
+  "alias" text [not null, note: "MaxLength: 255"]
+  "sort_name" text [note: "MaxLength: 255"]
+  "is_primary" boolean [not null]
+  "locale" text [note: "MaxLength: 10"]
+
+  Indexes {
+    (track_id, alias) [unique, name: "idx_track_alias_unique"]
+  }
+}
+
+Table "music"."albums_alias" {
+  "id" uuid [pk, not null]
+  "album_id" uuid [not null, ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
+  "alias" text [not null, note: "MaxLength: 255"]
+  "sort_name" text [note: "MaxLength: 255"]
+  "is_primary" boolean [not null]
+  "locale" text [note: "MaxLength: 10"]
+
+  Indexes {
+    (album_id, alias) [unique, name: "idx_album_alias_unique"]
+  }
+}
+
+Table "music"."provider_artist_mappings" {
+  "id" uuid [pk, not null]
+  "artist_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
+  "provider" "music"."account_provider" [not null]
+  "external_id" text [not null, note: "MaxLength: 128"]
+  "external_url" text [note: "MaxLength: 1000"]
+  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
+
+  Indexes {
+    (provider, external_id) [unique, name: "idx_provider_artist_unique"]
+    (artist_id, provider) [name: "idx_artist_provider"]
+  }
+}
+
+Table "music"."provider_track_mappings" {
+  "id" uuid [pk, not null]
+  "track_id" uuid [not null, ref: > "music"."tracks"."id", note: "OnDelete: Cascade"]
+  "provider" "music"."account_provider" [not null]
+  "external_id" text [not null, note: "MaxLength: 128"]
+  "external_url" text [note: "MaxLength: 1000"]
+  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
+
+  Indexes {
+    (provider, external_id) [unique, name: "idx_provider_track_unique"]
+    (track_id, provider) [name: "idx_track_provider"]
+  }
+}
+
+Table "music"."provider_album_mappings" {
+  "id" uuid [pk, not null]
+  "album_id" uuid [not null, ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
+  "provider" "music"."account_provider" [not null]
+  "external_id" text [not null, note: "MaxLength: 128"]
+  "external_url" text [note: "MaxLength: 1000"]
+  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
+
+  Indexes {
+    (provider, external_id) [unique, name: "idx_provider_album_unique"]
+    (album_id, provider) [name: "idx_album_provider"]
+  }
+}
+
+Table "music"."provider_sync_state" {
+  "user_id" text [not null, ref: > "public"."user"."id", note: "OnDelete: Cascade"]
+  "provider" "music"."account_provider" [not null]
+  "last_synced_at" timestamptz [note: "UTC timestamp, played_at of most recent background-synced play"]
+  "sync_status" "music"."sync_status" [not null, default: "idle", note: "Prevents concurrent syncs"]
+  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
+  "updated_at" timestamptz [not null, note: "UTC timestamp"]
+
+  Indexes {
+    (user_id, provider) [pk, name: "provider_sync_state_pk"]
+  }
+}
+
+Table "music"."import_jobs" {
   "id" uuid [pk, not null]
   "user_id" text [not null, ref: > "public"."user"."id", note: "OnDelete: Cascade"]
   "filename" text [not null, note: "MaxLength: 255"]
   "file_hash" text [not null, note: "MaxLength: 64"]
   "file_size" bigint [not null]
   "file_path" text [not null, note: "MaxLength: 500, Path relative to uploads directory"]
-  "status" job_status [not null, default: "Queued"]
+  "status" "music"."job_status" [not null, default: "Queued"]
   "total_records" integer
   "imported_records" integer [not null, default: 0]
   "failed_records" integer [not null, default: 0]
@@ -162,12 +347,12 @@ Table "public"."import_jobs" {
   }
 }
 
-Table "public"."enrichment_jobs" {
+Table "music"."enrichment_jobs" {
   "id" uuid [pk, not null]
-  "artist_id" uuid [ref: > "public"."artists"."id", note: "OnDelete: Cascade"]
-  "album_id" uuid [ref: > "public"."albums"."id", note: "OnDelete: Cascade"]
-  "track_id" uuid [ref: > "public"."tracks"."id", note: "OnDelete: Cascade"]
-  "status" job_status [not null, default: "Queued"]
+  "artist_id" uuid [ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
+  "album_id" uuid [ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
+  "track_id" uuid [ref: > "music"."tracks"."id", note: "OnDelete: Cascade"]
+  "status" "music"."job_status" [not null, default: "Queued"]
   "priority" integer [not null, default: 0, note: "Higher priority jobs processed first"]
   "retry_count" integer [not null, default: 0]
   "max_retries" integer [not null, default: 3]
@@ -183,158 +368,5 @@ Table "public"."enrichment_jobs" {
     (track_id) [unique, name: "idx_enrichment_track", note: "WHERE status IN ('Queued', 'Processing')"]
     (status, priority) [name: "idx_enrichment_queue"]
     (status) [name: "idx_enrichment_status"]
-  }
-}
-
-Table "public"."plays" {
-  "id" bigint [pk, not null, increment, note: "Identity / BIGSERIAL-style key"]
-  "user_id" text [not null, ref: > "public"."user"."id", note: "OnDelete: Cascade"]
-  "track_id" uuid [not null, ref: > "public"."tracks"."id", note: "OnDelete: Restrict"]
-  "album_id" uuid [ref: > "public"."albums"."id", note: "OnDelete: Restrict"]
-  "import_job_id" uuid [ref: > "public"."import_jobs"."id", note: "OnDelete: Cascade"]
-  "played_at" timestamptz [not null, note: "UTC timestamp"]
-  "played_duration_ms" integer [not null]
-  "skipped" boolean [not null, default: false]
-  "provider" account_provider [not null]
-  "deleted_at" timestamptz [note: "UTC timestamp, Soft delete - null if active"]
-
-  Indexes {
-    (user_id, track_id, played_at) [unique, name: "no_duplicate_scrobbles", note: "WHERE deleted_at IS NULL"]
-    (user_id, played_at) [name: "idx_plays_user_time", note: "WHERE deleted_at IS NULL; played_at DESC"]
-    (album_id) [name: "idx_plays_album", note: "WHERE deleted_at IS NULL"]
-    (track_id) [name: "idx_plays_track", note: "WHERE deleted_at IS NULL"]
-    (import_job_id) [name: "idx_scrobbles_import", note: "WHERE deleted_at IS NULL"]
-    (deleted_at) [name: "idx_plays_deleted"]
-  }
-}
-
-Table "public"."track_artists" {
-  "track_id" uuid [not null, ref: > "public"."tracks"."id", note: "OnDelete: Cascade"]
-  "artist_id" uuid [not null, ref: > "public"."artists"."id", note: "OnDelete: Cascade"]
-  "is_primary" boolean [not null, default: true]
-  "order" integer [not null]
-  "join_phrase" text [note: "MaxLength: 50"]
-
-  Indexes {
-    (track_id, artist_id) [pk, name: "track_artists_pk"]
-    (artist_id) [name: "idx_track_artists_reverse"]
-  }
-}
-
-Table "public"."track_albums" {
-  "track_id" uuid [not null, ref: > "public"."tracks"."id", note: "OnDelete: Cascade"]
-  "album_id" uuid [not null, ref: > "public"."albums"."id", note: "OnDelete: Cascade"]
-  "disc_number" integer
-  "position" integer
-
-  Indexes {
-    (track_id, album_id) [pk, name: "track_albums_pk"]
-    (album_id) [name: "idx_track_albums_reverse"]
-  }
-}
-
-Table "public"."album_artists" {
-  "album_id" uuid [not null, ref: > "public"."albums"."id", note: "OnDelete: Cascade"]
-  "artist_id" uuid [not null, ref: > "public"."artists"."id", note: "OnDelete: Cascade"]
-  "is_primary" boolean [not null, default: true]
-  "order" integer [not null]
-
-  Indexes {
-    (album_id, artist_id) [pk, name: "album_artists_pk"]
-    (artist_id) [name: "idx_album_artists_reverse"]
-  }
-}
-
-Table "public"."artists_groups" {
-  "member_id" uuid [not null, ref: > "public"."artists"."id", note: "OnDelete: Cascade"]
-  "group_id" uuid [not null, ref: > "public"."artists"."id", note: "OnDelete: Restrict"]
-  "start_date" date
-  "end_date" date
-
-  Indexes {
-    (member_id, group_id) [pk, name: "artists_groups_pk"]
-    (group_id) [name: "idx_artists_groups_reverse"]
-  }
-}
-
-Table "public"."artists_alias" {
-  "id" uuid [pk, not null]
-  "artist_id" uuid [not null, ref: > "public"."artists"."id", note: "OnDelete: Cascade"]
-  "alias" text [not null, note: "MaxLength: 100"]
-  "sort_name" text [note: "MaxLength: 100"]
-  "is_primary" boolean [not null]
-  "locale" text [note: "MaxLength: 10"]
-
-  Indexes {
-    (alias) [name: "idx_artist_alias_search"]
-    (artist_id, alias) [unique, name: "idx_artist_alias_unique"]
-  }
-}
-
-Table "public"."tracks_alias" {
-  "id" uuid [pk, not null]
-  "track_id" uuid [not null, ref: > "public"."tracks"."id", note: "OnDelete: Cascade"]
-  "alias" text [not null, note: "MaxLength: 255"]
-  "sort_name" text [note: "MaxLength: 255"]
-  "is_primary" boolean [not null]
-  "locale" text [note: "MaxLength: 10"]
-
-  Indexes {
-    (track_id, alias) [unique, name: "idx_track_alias_unique"]
-  }
-}
-
-Table "public"."albums_alias" {
-  "id" uuid [pk, not null]
-  "album_id" uuid [not null, ref: > "public"."albums"."id", note: "OnDelete: Cascade"]
-  "alias" text [not null, note: "MaxLength: 255"]
-  "sort_name" text [note: "MaxLength: 255"]
-  "is_primary" boolean [not null]
-  "locale" text [note: "MaxLength: 10"]
-
-  Indexes {
-    (album_id, alias) [unique, name: "idx_album_alias_unique"]
-  }
-}
-
-Table "public"."provider_artist_mappings" {
-  "id" uuid [pk, not null]
-  "artist_id" uuid [not null, ref: > "public"."artists"."id", note: "OnDelete: Cascade"]
-  "provider" account_provider [not null]
-  "external_id" text [not null, note: "MaxLength: 128"]
-  "external_url" text [note: "MaxLength: 1000"]
-  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
-
-  Indexes {
-    (provider, external_id) [unique, name: "idx_provider_artist_unique"]
-    (artist_id, provider) [name: "idx_artist_provider"]
-  }
-}
-
-Table "public"."provider_track_mappings" {
-  "id" uuid [pk, not null]
-  "track_id" uuid [not null, ref: > "public"."tracks"."id", note: "OnDelete: Cascade"]
-  "provider" account_provider [not null]
-  "external_id" text [not null, note: "MaxLength: 128"]
-  "external_url" text [note: "MaxLength: 1000"]
-  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
-
-  Indexes {
-    (provider, external_id) [unique, name: "idx_provider_track_unique"]
-    (track_id, provider) [name: "idx_track_provider"]
-  }
-}
-
-Table "public"."provider_album_mappings" {
-  "id" uuid [pk, not null]
-  "album_id" uuid [not null, ref: > "public"."albums"."id", note: "OnDelete: Cascade"]
-  "provider" account_provider [not null]
-  "external_id" text [not null, note: "MaxLength: 128"]
-  "external_url" text [note: "MaxLength: 1000"]
-  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
-
-  Indexes {
-    (provider, external_id) [unique, name: "idx_provider_album_unique"]
-    (album_id, provider) [name: "idx_album_provider"]
   }
 }
