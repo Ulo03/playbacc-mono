@@ -1,19 +1,68 @@
 Enum "music"."account_provider" {
-    "Spotify"
+    "spotify"
 }
 
 Enum "music"."job_status" {
-  "Queued"
-  "Processing"
-  "Completed"
-  "Failed"
-  "Cancelled"
+  "queued"
+  "processing"
+  "completed"
+  "failed"
+  "cancelled"
 }
 
 Enum "music"."sync_status" {
   "idle"
   "syncing"
   "failed"
+}
+
+Enum "music"."album_primary_type" {
+  "album"
+  "single"
+  "ep"
+  "broadcast"
+  "other"
+}
+
+Enum "music"."album_secondary_type" {
+  "compilation"
+  "soundtrack"
+  "spokenword"
+  "interview"
+  "audiobook"
+  "audio_drama"
+  "live"
+  "remix"
+  "dj_mix"
+  "mixtape"
+  "demo"
+  "field_recording"
+}
+
+Enum "music"."artist_type" {
+  "person"
+  "group"
+  "orchestra"
+  "choir"
+  "character"
+  "other"
+}
+
+Enum "music"."artist_gender" {
+  "male"
+  "female"
+  "other"
+  "not_applicable"
+}
+
+Enum "music"."label_type" {
+  "imprint"
+  "original_production"
+  "bootleg_production"
+  "reissue_production"
+  "distributor"
+  "holding"
+  "rights_society"
 }
 
 // ──────────────────────────────────────────────
@@ -121,25 +170,39 @@ Table "music"."artists" {
   "sort_name" text [note: "MaxLength: 100"]
   "mb_id" uuid [unique, note: "MusicBrainz ID"]
   "image_url" text [note: "MaxLength: 1000"]
+  "type" "music"."artist_type"
+  "gender" "music"."artist_gender"
+  "country" text [note: "ISO 3166-1 alpha-2, MaxLength: 2"]
+  "begin_date" date [note: "Birth (Person) or formation (Group)"]
+  "end_date" date [note: "Death or dissolution"]
+  "comment" text [note: "MusicBrainz disambiguation, MaxLength: 255"]
   "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
   "updated_at" timestamptz [not null, note: "UTC timestamp"]
 
   Indexes {
     (name) [name: "idx_artists_name"]
+    (country) [name: "idx_artists_country"]
   }
 }
 
 Table "music"."albums" {
   "id" uuid [pk, not null]
   "title" text [not null, note: "MaxLength: 255"]
-  "release_date" date
+  "release_date" date [note: "Date of this specific edition"]
+  "first_release_date" date [note: "Canonical release group date — use this for decade stats, not release_date"]
+  "primary_type" "music"."album_primary_type"
+  "secondary_types" "music"."album_secondary_type"[] [note: "Can co-exist: e.g. Live + Soundtrack"]
+  "country" text [note: "ISO 3166-1 alpha-2 of earliest release event, MaxLength: 2"]
   "mb_id" uuid [unique, note: "MusicBrainz ID"]
   "image_url" text [note: "MaxLength: 1000"]
+  "comment" text [note: "MusicBrainz disambiguation, MaxLength: 255"]
   "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
   "updated_at" timestamptz [not null, note: "UTC timestamp"]
 
   Indexes {
     (title) [name: "idx_albums_title"]
+    (primary_type) [name: "idx_albums_primary_type"]
+    (first_release_date) [name: "idx_albums_first_release"]
   }
 }
 
@@ -150,6 +213,7 @@ Table "music"."tracks" {
   "mb_id" uuid [unique, note: "MusicBrainz ID"]
   "isrc" text [unique, note: "International Standard Recording Code, MaxLength: 12"]
   "explicit" boolean [not null]
+  "comment" text [note: "MusicBrainz disambiguation: 'live, 2002-08-12', 'radio edit', 'instrumental'. MaxLength: 255"]
   "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
   "updated_at" timestamptz [not null, note: "UTC timestamp"]
 
@@ -210,6 +274,7 @@ Table "music"."album_artists" {
   "artist_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
   "is_primary" boolean [not null, default: true]
   "order" integer [not null]
+  "join_phrase" text [note: "MaxLength: 50"]
 
   Indexes {
     (album_id, artist_id) [pk, name: "album_artists_pk"]
@@ -219,7 +284,7 @@ Table "music"."album_artists" {
 
 Table "music"."artists_groups" {
   "member_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
-  "group_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Restrict"]
+  "group_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
   "start_date" date
   "end_date" date
 
@@ -266,6 +331,78 @@ Table "music"."albums_alias" {
 
   Indexes {
     (album_id, alias) [unique, name: "idx_album_alias_unique"]
+  }
+}
+
+Table "music"."labels" {
+  "id" uuid [pk, not null]
+  "name" text [not null, note: "MaxLength: 255"]
+  "sort_name" text [note: "MaxLength: 255"]
+  "mb_id" uuid [unique, note: "MusicBrainz ID"]
+  "label_code" text [note: "LC-XXXX, MaxLength: 10"]
+  "type" "music"."label_type"
+  "country" text [note: "ISO 3166-1 alpha-2, MaxLength: 2"]
+  "begin_date" date
+  "end_date" date
+  "comment" text [note: "MaxLength: 255"]
+  "image_url" text [note: "MaxLength: 1000"]
+  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
+  "updated_at" timestamptz [not null, note: "UTC timestamp"]
+
+  Indexes {
+    (name) [name: "idx_labels_name"]
+    (country) [name: "idx_labels_country"]
+  }
+}
+
+Table "music"."album_labels" {
+  "album_id" uuid [not null, ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
+  "label_id" uuid [not null, ref: > "music"."labels"."id", note: "OnDelete: Restrict"]
+  "catalog_number" text [note: "MaxLength: 50"]
+
+  Indexes {
+    (album_id, label_id) [pk, name: "album_labels_pk"]
+    (label_id) [name: "idx_album_labels_reverse"]
+  }
+}
+
+Table "music"."genres" {
+  "id" uuid [pk, not null]
+  "name" text [not null, unique, note: "MaxLength: 100"]
+  "mb_id" uuid [unique, note: "MusicBrainz genre ID"]
+  "created_at" timestamptz [not null, default: `now()`, note: "UTC timestamp"]
+}
+
+Table "music"."artist_genres" {
+  "artist_id" uuid [not null, ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
+  "genre_id" uuid [not null, ref: > "music"."genres"."id", note: "OnDelete: Cascade"]
+  "count" integer [not null, default: 1, note: "MB community vote count"]
+
+  Indexes {
+    (artist_id, genre_id) [pk, name: "artist_genres_pk"]
+    (genre_id) [name: "idx_artist_genres_reverse"]
+  }
+}
+
+Table "music"."album_genres" {
+  "album_id" uuid [not null, ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
+  "genre_id" uuid [not null, ref: > "music"."genres"."id", note: "OnDelete: Cascade"]
+  "count" integer [not null, default: 1, note: "MB community vote count"]
+
+  Indexes {
+    (album_id, genre_id) [pk, name: "album_genres_pk"]
+    (genre_id) [name: "idx_album_genres_reverse"]
+  }
+}
+
+Table "music"."track_genres" {
+  "track_id" uuid [not null, ref: > "music"."tracks"."id", note: "OnDelete: Cascade"]
+  "genre_id" uuid [not null, ref: > "music"."genres"."id", note: "OnDelete: Cascade"]
+  "count" integer [not null, default: 1, note: "MB community vote count"]
+
+  Indexes {
+    (track_id, genre_id) [pk, name: "track_genres_pk"]
+    (genre_id) [name: "idx_track_genres_reverse"]
   }
 }
 
@@ -331,7 +468,7 @@ Table "music"."import_jobs" {
   "file_hash" text [not null, note: "MaxLength: 64"]
   "file_size" bigint [not null]
   "file_path" text [not null, note: "MaxLength: 500, Path relative to uploads directory"]
-  "status" "music"."job_status" [not null, default: "Queued"]
+  "status" "music"."job_status" [not null, default: "queued"]
   "total_records" integer
   "imported_records" integer [not null, default: 0]
   "failed_records" integer [not null, default: 0]
@@ -352,7 +489,7 @@ Table "music"."enrichment_jobs" {
   "artist_id" uuid [ref: > "music"."artists"."id", note: "OnDelete: Cascade"]
   "album_id" uuid [ref: > "music"."albums"."id", note: "OnDelete: Cascade"]
   "track_id" uuid [ref: > "music"."tracks"."id", note: "OnDelete: Cascade"]
-  "status" "music"."job_status" [not null, default: "Queued"]
+  "status" "music"."job_status" [not null, default: "queued"]
   "priority" integer [not null, default: 0, note: "Higher priority jobs processed first"]
   "retry_count" integer [not null, default: 0]
   "max_retries" integer [not null, default: 3]
@@ -363,9 +500,9 @@ Table "music"."enrichment_jobs" {
   Note: "Exactly one of artist_id, album_id, track_id must be non-null"
 
   Indexes {
-    (artist_id) [unique, name: "idx_enrichment_artist", note: "WHERE status IN ('Queued', 'Processing')"]
-    (album_id) [unique, name: "idx_enrichment_album", note: "WHERE status IN ('Queued', 'Processing')"]
-    (track_id) [unique, name: "idx_enrichment_track", note: "WHERE status IN ('Queued', 'Processing')"]
+    (artist_id) [unique, name: "idx_enrichment_artist", note: "WHERE status IN ('queued', 'processing')"]
+    (album_id) [unique, name: "idx_enrichment_album", note: "WHERE status IN ('queued', 'processing')"]
+    (track_id) [unique, name: "idx_enrichment_track", note: "WHERE status IN ('queued', 'processing')"]
     (status, priority) [name: "idx_enrichment_queue"]
     (status) [name: "idx_enrichment_status"]
   }
