@@ -13,7 +13,7 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-<div class="min-h-screen bg-neutral-950 text-neutral-100">
+<div class="min-h-screen bg-pb-bg text-neutral-100">
   {#if data.user && !isLoginPage}
     <NavBar user={data.user} />
   {/if}

@@ -11,7 +11,7 @@
 </script>
 
 <div
-  class="mb-6 flex items-center justify-between border border-neutral-700 rounded-md bg-neutral-900 p-3"
+  class="mb-6 flex items-center justify-between border border-neutral-700 rounded-md bg-pb-bg-surface p-3"
 >
   <div class="mr-3 min-w-0">
     <p class="text-sm font-medium">{title}</p>
@@ -23,7 +23,7 @@
     {checked}
     onCheckedChange={(v) => (checked = v)}
     class="h-5.5 w-10 inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors {checked
-      ? 'bg-green-500'
+      ? 'bg-pb-primary'
       : 'bg-neutral-700'}"
   >
     <Switch.Thumb

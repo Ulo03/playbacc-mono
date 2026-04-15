@@ -20,7 +20,7 @@
       {#if profile.isOwner}
         <a
           href="/settings"
-          class="mt-3 inline-flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300"
+          class="mt-3 inline-flex items-center gap-1.5 text-xs text-pb-primary hover:text-pb-primary-light"
         >
           <Settings class="size-3.5" />
           {m.profile_settings()}

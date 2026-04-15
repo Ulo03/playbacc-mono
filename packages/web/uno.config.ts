@@ -5,6 +5,16 @@ export default defineConfig({
   extractors: [extractorSvelte()],
   theme: {
     colors: {
+      pb: {
+        bg: {
+          DEFAULT: "#0a0a0a",
+          surface: "#171717",
+        },
+        primary: {
+          DEFAULT: "#e8a849",
+          light: "#f0be6e",
+        },
+      },
       spotify: {
         green: "#1DB954",
         white: "#FFFFFF",

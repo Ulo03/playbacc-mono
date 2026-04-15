@@ -11,7 +11,10 @@
     <p class="mt-2 text-sm text-neutral-500">
       {page.error?.message ?? m.error_user_not_found()}
     </p>
-    <a href="/" class="mt-6 text-sm text-green-400 hover:text-green-300">
+    <a
+      href="/"
+      class="mt-6 text-sm text-pb-primary hover:text-pb-primary-light"
+    >
       {m.error_go_home()}
     </a>
   </div>

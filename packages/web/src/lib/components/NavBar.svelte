@@ -20,7 +20,7 @@
 </script>
 
 <nav
-  class="sticky top-0 z-50 w-full border-b border-neutral-800 bg-neutral-950/95 backdrop-blur-sm"
+  class="sticky top-0 z-50 w-full border-b border-neutral-800 bg-pb-bg/95 backdrop-blur-sm"
 >
   <div class="flex items-center justify-between px-4 py-3 sm:px-6">
     <a
@@ -32,7 +32,7 @@
 
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        class="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+        class="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-pb-primary"
       >
         <UserAvatar src={user.image} alt={user.name} class="size-8 sm:size-9" />
       </DropdownMenu.Trigger>
@@ -40,7 +40,7 @@
       <DropdownMenu.Content
         align="end"
         sideOffset={8}
-        class="z-50 min-w-[180px] border border-neutral-800 rounded-lg bg-neutral-900 shadow-xl"
+        class="z-50 min-w-[180px] border border-neutral-800 rounded-lg bg-pb-bg-surface shadow-xl"
       >
         <div class="border-b border-neutral-800 px-3 py-2.5">
           <p class="truncate text-sm text-neutral-100 font-semibold">
