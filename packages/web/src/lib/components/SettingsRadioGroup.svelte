@@ -13,7 +13,7 @@
 </script>
 
 <div class="mb-6">
-  <p class="mb-1.5 text-xs text-neutral-400 font-medium sm:text-sm">
+  <p class="mb-1.5 text-xs text-pb-text-secondary font-medium sm:text-sm">
     {label}
   </p>
   <RadioGroup.Root bind:value class="flex flex-col gap-2">
@@ -25,7 +25,7 @@
           value={opt.value}
           class="size-4.5 shrink-0 border rounded-full {value === opt.value
             ? 'border-pb-primary'
-            : 'border-neutral-600'}"
+            : 'border-pb-border'}"
         >
           {#snippet children({ checked })}
             {#if checked}
@@ -33,7 +33,10 @@
             {/if}
           {/snippet}
         </RadioGroup.Item>
-        <Label.Root for={id} class="cursor-pointer text-sm text-neutral-300">
+        <Label.Root
+          for={id}
+          class="cursor-pointer text-sm text-pb-text-secondary"
+        >
           {opt.label}
         </Label.Root>
       </div>

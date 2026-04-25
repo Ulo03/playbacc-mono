@@ -26,11 +26,11 @@
   />
   <p class="text-xl font-bold sm:text-2xl">{name}</p>
   {#if username}
-    <p class="mt-1 text-sm text-neutral-500">
+    <p class="mt-1 text-sm text-pb-text-muted">
       @{displayUsername ?? username}
     </p>
   {/if}
-  <p class="mt-2 text-xs text-neutral-600">
+  <p class="mt-2 text-xs text-pb-text-muted">
     {m.profile_joined({ date: formatMonthYear(createdAt) })}
   </p>
   {#if footer}

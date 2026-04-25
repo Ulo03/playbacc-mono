@@ -190,10 +190,10 @@
 
   const usernameBorderClass = $derived(
     usernameError
-      ? "border-2 border-red-500"
+      ? "border-2 border-pb-danger"
       : usernameAvailable === true
         ? "border-2 border-pb-primary"
-        : "border border-neutral-700",
+        : "border border-pb-border",
   );
 </script>
 
@@ -217,7 +217,7 @@
   >
     {#snippet badge()}
       {#if !savedUsername}
-        <span class="text-amber-500">{m.settings_username_required()}</span>
+        <span class="text-pb-warning">{m.settings_username_required()}</span>
       {/if}
     {/snippet}
     {#snippet hint()}
@@ -226,11 +226,11 @@
           {m.settings_username_available()}
         </p>
       {:else if checkingUsername}
-        <p class="mt-1 text-xs text-neutral-500">
+        <p class="mt-1 text-xs text-pb-text-muted">
           {m.settings_username_checking()}
         </p>
       {:else if !usernameUnchanged || !savedUsername}
-        <p class="mt-1 text-xs text-neutral-600">
+        <p class="mt-1 text-xs text-pb-text-muted">
           {m.settings_username_help()}
         </p>
       {/if}
@@ -252,9 +252,9 @@
     bind:checked={isPublic}
   />
 
-  <hr class="my-6 border-neutral-800" />
+  <hr class="my-6 border-pb-border" />
 
-  <h2 class="mb-4 text-sm text-neutral-400 font-medium sm:text-base">
+  <h2 class="mb-4 text-sm text-pb-text-secondary font-medium sm:text-base">
     {m.settings_preferences_heading()}
   </h2>
 
@@ -270,7 +270,7 @@
     options={timeFormatOptions}
   />
 
-  <hr class="my-6 border-neutral-800" />
+  <hr class="my-6 border-pb-border" />
 
   {#if savedUsername}
     <a
@@ -280,13 +280,13 @@
       {m.settings_view_profile()}
     </a>
   {:else}
-    <p class="mb-4 text-center text-xs text-neutral-600 italic">
+    <p class="mb-4 text-center text-xs text-pb-text-muted italic">
       {m.settings_set_username_hint()}
     </p>
   {/if}
 
   {#if saveError}
-    <p class="mb-3 text-center text-sm text-red-400">{saveError}</p>
+    <p class="mb-3 text-center text-sm text-pb-danger">{saveError}</p>
   {/if}
 
   <Button.Root

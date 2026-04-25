@@ -18,26 +18,26 @@
 </script>
 
 <div class="mb-4 sm:mb-5">
-  <p class="mb-1.5 text-xs text-neutral-400 font-medium sm:text-sm">
+  <p class="mb-1.5 text-xs text-pb-text-secondary font-medium sm:text-sm">
     {label}
   </p>
   <Select.Root type="single" bind:value>
     <Select.Trigger
-      class="w-full flex items-center justify-between border border-neutral-700 rounded-md bg-pb-bg-surface px-3 py-2.5 text-sm text-neutral-100 outline-none focus:border-pb-primary"
+      class="w-full flex items-center justify-between border border-pb-border rounded-md bg-pb-bg-surface px-3 py-2.5 text-sm text-pb-text outline-none focus:border-pb-primary"
     >
       {selectedLabel}
-      <ChevronDown class="size-4 text-neutral-500" />
+      <ChevronDown class="size-4 text-pb-text-muted" />
     </Select.Trigger>
     <Select.Portal>
       <Select.Content
-        class="z-50 border border-neutral-700 rounded-md bg-pb-bg-surface shadow-xl"
+        class="z-50 border border-pb-border rounded-md bg-pb-bg-surface shadow-xl"
         sideOffset={4}
       >
         <Select.Viewport class="p-1">
           {#each options as opt (opt.value)}
             <Select.Item
               value={opt.value}
-              class="cursor-pointer rounded px-3 py-2 text-sm text-neutral-300 outline-none data-[highlighted]:bg-neutral-800 data-[state=checked]:text-pb-primary"
+              class="cursor-pointer rounded px-3 py-2 text-sm text-pb-text-secondary outline-none data-[highlighted]:bg-pb-bg-surface-hover data-[state=checked]:text-pb-primary"
             >
               {#snippet children({ selected })}
                 {selected ? "✓ " : ""}{opt.label}

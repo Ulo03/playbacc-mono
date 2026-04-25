@@ -11,12 +11,12 @@
 </script>
 
 <div
-  class="mb-6 flex items-center justify-between border border-neutral-700 rounded-md bg-pb-bg-surface p-3"
+  class="mb-6 flex items-center justify-between border border-pb-border rounded-md bg-pb-bg-surface p-3"
 >
   <div class="mr-3 min-w-0">
     <p class="text-sm font-medium">{title}</p>
     {#if description}
-      <p class="text-xs text-neutral-500">{description}</p>
+      <p class="text-xs text-pb-text-muted">{description}</p>
     {/if}
   </div>
   <Switch.Root
@@ -24,7 +24,7 @@
     onCheckedChange={(v) => (checked = v)}
     class="h-5.5 w-10 inline-flex shrink-0 cursor-pointer items-center rounded-full transition-colors {checked
       ? 'bg-pb-primary'
-      : 'bg-neutral-700'}"
+      : 'bg-pb-bg-surface-hover'}"
   >
     <Switch.Thumb
       class="pointer-events-none block size-4.5 rounded-full bg-white shadow transition-transform {checked
