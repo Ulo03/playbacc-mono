@@ -7,13 +7,25 @@ export default defineConfig({
     colors: {
       pb: {
         bg: {
-          DEFAULT: "#0a0a0a",
-          surface: "#171717",
+          DEFAULT: "var(--color-bg)",
+          surface: "var(--color-surface)",
+          "surface-hover": "var(--color-surface-hover)",
         },
+        border: "var(--color-border)",
+        overlay: "var(--color-overlay)",
         primary: {
-          DEFAULT: "#e8a849",
-          light: "#f0be6e",
+          DEFAULT: "var(--color-primary)",
+          light: "color-mix(in oklab, var(--color-primary), white 25%)",
         },
+        text: {
+          DEFAULT: "var(--color-text-primary)",
+          secondary: "var(--color-text-secondary)",
+          muted: "var(--color-text-muted)",
+        },
+        danger: "var(--color-danger)",
+        success: "var(--color-success)",
+        warning: "var(--color-warning)",
+        "focus-ring": "var(--color-focus-ring)",
       },
       spotify: {
         green: "#1DB954",
