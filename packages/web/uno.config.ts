@@ -33,7 +33,6 @@ export default defineConfig({
         black: "#191414",
       },
     },
-    borderRadius: {},
   },
   presets: [
     presetUno(),
