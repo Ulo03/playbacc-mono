@@ -6,9 +6,9 @@
 
 <main class="mx-auto max-w-[480px] px-4 py-16 sm:px-6 sm:py-24">
   <div class="flex flex-col items-center text-center">
-    <UserX class="mb-4 size-16 text-neutral-700" />
+    <UserX class="mb-4 size-16 text-pb-text-muted" />
     <h1 class="text-2xl font-bold sm:text-3xl">{page.status}</h1>
-    <p class="mt-2 text-sm text-neutral-500">
+    <p class="mt-2 text-sm text-pb-text-muted">
       {page.error?.message ?? m.error_user_not_found()}
     </p>
     <a

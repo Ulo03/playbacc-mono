@@ -4,8 +4,23 @@ import type { Handle } from "@sveltejs/kit";
 import type { User, Session } from "@playbacc/shared";
 import { getTextDirection } from "$lib/paraglide/runtime";
 import { paraglideMiddleware } from "$lib/paraglide/server";
+import { getTheme, themeToCSS } from "$lib/tokens";
 
 const API_URL = process.env.PUBLIC_API_URL ?? "http://127.0.0.1:3000";
+
+const handleTheme: Handle = ({ event, resolve }) => {
+  const themeId =
+    event.locals.user?.theme ?? event.cookies.get("pb-theme") ?? null;
+  const theme = getTheme(themeId);
+  const styleBlock = `<style data-pb-theme="${theme.id}">${themeToCSS(theme)}</style>`;
+
+  return resolve(event, {
+    transformPageChunk: ({ html }) =>
+      html
+        .replace("%pb.theme.style%", styleBlock)
+        .replace("%pb.theme.bg%", theme.colors.bg),
+  });
+};
 
 const handleParaglide: Handle = ({ event, resolve }) =>
   paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -78,5 +93,9 @@ const handleAuth: Handle = async ({ event, resolve }) => {
   return resolve(event);
 };
 
-// handleAuth runs first to set cookie, then handleParaglide reads it
-export const handle: Handle = sequence(handleAuth, handleParaglide);
+// handleAuth sets locals.user, handleTheme reads it, handleParaglide reads locale
+export const handle: Handle = sequence(
+  handleAuth,
+  handleTheme,
+  handleParaglide,
+);

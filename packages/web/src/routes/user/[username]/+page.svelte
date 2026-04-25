@@ -29,9 +29,9 @@
     {/snippet}
   </UserHeader>
 
-  <hr class="my-6 border-neutral-800 sm:my-8" />
+  <hr class="my-6 border-pb-border sm:my-8" />
 
-  <p class="py-8 text-center text-sm text-neutral-600 italic sm:py-12">
+  <p class="py-8 text-center text-sm text-pb-text-muted italic sm:py-12">
     {m.profile_listening_history_empty()}
   </p>
 </main>

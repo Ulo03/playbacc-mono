@@ -1,27 +1,47 @@
 <script lang="ts">
+  import * as m from "$lib/paraglide/messages";
   import { Select } from "bits-ui";
   import { ChevronDown } from "lucide-svelte";
-
-  type Option = { value: string; label: string };
+  import { authClient } from "$lib/auth-client";
+  import { listThemes, getTheme, applyTheme } from "$lib/tokens";
 
   type Props = {
-    label: string;
     value: string;
-    options: Option[];
   };
 
-  let { label, value = $bindable(), options }: Props = $props();
+  let { value = $bindable() }: Props = $props();
 
+  const options = listThemes();
   const selectedLabel = $derived(
-    options.find((o) => o.value === value)?.label ?? "",
+    options.find((o) => o.id === value)?.label ?? "",
   );
+
+  const setCookie = (themeId: string) => {
+    document.cookie = `pb-theme=${themeId};path=/;max-age=34560000;samesite=lax`;
+  };
+
+  const handleChange = async (next: string) => {
+    const previous = value;
+    if (next === previous) return;
+
+    value = next;
+    applyTheme(getTheme(next));
+    setCookie(next);
+
+    const { error } = await authClient.updateUser({ theme: next });
+    if (error) {
+      value = previous;
+      applyTheme(getTheme(previous));
+      setCookie(previous);
+    }
+  };
 </script>
 
 <div class="mb-4 sm:mb-5">
   <p class="mb-1.5 text-xs text-pb-text-secondary font-medium sm:text-sm">
-    {label}
+    {m.settings_theme_label()}
   </p>
-  <Select.Root type="single" bind:value>
+  <Select.Root type="single" {value} onValueChange={handleChange}>
     <Select.Trigger
       class="w-full flex items-center justify-between border border-pb-border rounded-md bg-pb-bg-surface px-3 py-2.5 text-sm text-pb-text outline-none focus:border-pb-primary"
     >
@@ -34,9 +54,9 @@
         sideOffset={4}
       >
         <Select.Viewport class="p-1">
-          {#each options as opt (opt.value)}
+          {#each options as opt (opt.id)}
             <Select.Item
-              value={opt.value}
+              value={opt.id}
               class="cursor-pointer rounded px-3 py-2 text-sm text-pb-text-secondary outline-none data-[highlighted]:bg-pb-bg-surface-hover data-[state=checked]:text-pb-primary"
             >
               {#snippet children({ selected })}

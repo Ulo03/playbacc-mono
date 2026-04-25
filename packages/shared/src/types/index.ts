@@ -15,6 +15,7 @@ export type User = {
   updatedAt: Date;
   locale: string;
   timeFormat: string;
+  theme: string;
 };
 
 export type Session = {

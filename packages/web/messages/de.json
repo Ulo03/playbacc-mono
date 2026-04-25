@@ -31,6 +31,7 @@
   "settings_time_format_label": "Zeitformat",
   "settings_time_format_12h": "12-Stunden",
   "settings_time_format_24h": "24-Stunden",
+  "settings_theme_label": "Design",
   "settings_preferences_heading": "Einstellungen",
 
   "profile_joined": "Beigetreten {date}",

@@ -20,21 +20,70 @@ import { user } from "./auth.js";
 export const musicSchema = pgSchema("music");
 
 export const accountProviderEnum = musicSchema.enum("account_provider", [
-  "Spotify",
+  "spotify",
 ]);
 
 export const jobStatusEnum = musicSchema.enum("job_status", [
-  "Queued",
-  "Processing",
-  "Completed",
-  "Failed",
-  "Cancelled",
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+  "cancelled",
 ]);
 
 export const syncStatusEnum = musicSchema.enum("sync_status", [
   "idle",
   "syncing",
   "failed",
+]);
+
+export const albumPrimaryTypeEnum = musicSchema.enum("album_primary_type", [
+  "album",
+  "single",
+  "ep",
+  "broadcast",
+  "other",
+]);
+
+export const albumSecondaryTypeEnum = musicSchema.enum("album_secondary_type", [
+  "compilation",
+  "soundtrack",
+  "spokenword",
+  "interview",
+  "audiobook",
+  "audio_drama",
+  "live",
+  "remix",
+  "dj_mix",
+  "mixtape",
+  "demo",
+  "field_recording",
+]);
+
+export const artistTypeEnum = musicSchema.enum("artist_type", [
+  "person",
+  "group",
+  "orchestra",
+  "choir",
+  "character",
+  "other",
+]);
+
+export const artistGenderEnum = musicSchema.enum("artist_gender", [
+  "male",
+  "female",
+  "other",
+  "not_applicable",
+]);
+
+export const labelTypeEnum = musicSchema.enum("label_type", [
+  "imprint",
+  "original_production",
+  "bootleg_production",
+  "reissue_production",
+  "distributor",
+  "holding",
+  "rights_society",
 ]);
 
 // ── Core entities ───────────────────────────────
@@ -49,15 +98,24 @@ export const artists = musicSchema.table(
     sortName: text("sort_name"),
     mbId: uuid("mb_id").unique(),
     imageUrl: text("image_url"),
+    type: artistTypeEnum("type"),
+    gender: artistGenderEnum("gender"),
+    country: text("country"),
+    beginDate: date("begin_date"),
+    endDate: date("end_date"),
+    comment: text("comment"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
+      .$defaultFn(() => new Date())
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("idx_artists_name").on(table.name)],
+  (table) => [
+    index("idx_artists_name").on(table.name),
+    index("idx_artists_country").on(table.country),
+  ],
 );
 
 export const albums = musicSchema.table(
@@ -68,17 +126,26 @@ export const albums = musicSchema.table(
       .$defaultFn(() => crypto.randomUUID()),
     title: text("title").notNull(),
     releaseDate: date("release_date"),
+    firstReleaseDate: date("first_release_date"),
+    primaryType: albumPrimaryTypeEnum("primary_type"),
+    secondaryTypes: albumSecondaryTypeEnum("secondary_types").array(),
+    country: text("country"),
     mbId: uuid("mb_id").unique(),
     imageUrl: text("image_url"),
+    comment: text("comment"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
+      .$defaultFn(() => new Date())
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("idx_albums_title").on(table.title)],
+  (table) => [
+    index("idx_albums_title").on(table.title),
+    index("idx_albums_primary_type").on(table.primaryType),
+    index("idx_albums_first_release").on(table.firstReleaseDate),
+  ],
 );
 
 export const tracks = musicSchema.table(
@@ -92,11 +159,12 @@ export const tracks = musicSchema.table(
     mbId: uuid("mb_id").unique(),
     isrc: text("isrc").unique(),
     explicit: boolean("explicit").notNull(),
+    comment: text("comment"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
+      .$defaultFn(() => new Date())
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -119,7 +187,10 @@ export const trackArtists = musicSchema.table(
     joinPhrase: text("join_phrase"),
   },
   (table) => [
-    primaryKey({ columns: [table.trackId, table.artistId] }),
+    primaryKey({
+      name: "track_artists_pk",
+      columns: [table.trackId, table.artistId],
+    }),
     index("idx_track_artists_reverse").on(table.artistId),
   ],
 );
@@ -137,7 +208,10 @@ export const trackAlbums = musicSchema.table(
     position: integer("position"),
   },
   (table) => [
-    primaryKey({ columns: [table.trackId, table.albumId] }),
+    primaryKey({
+      name: "track_albums_pk",
+      columns: [table.trackId, table.albumId],
+    }),
     index("idx_track_albums_reverse").on(table.albumId),
   ],
 );
@@ -153,9 +227,13 @@ export const albumArtists = musicSchema.table(
       .references(() => artists.id, { onDelete: "cascade" }),
     isPrimary: boolean("is_primary").notNull().default(true),
     order: integer("order").notNull(),
+    joinPhrase: text("join_phrase"),
   },
   (table) => [
-    primaryKey({ columns: [table.albumId, table.artistId] }),
+    primaryKey({
+      name: "album_artists_pk",
+      columns: [table.albumId, table.artistId],
+    }),
     index("idx_album_artists_reverse").on(table.artistId),
   ],
 );
@@ -168,12 +246,15 @@ export const artistsGroups = musicSchema.table(
       .references(() => artists.id, { onDelete: "cascade" }),
     groupId: uuid("group_id")
       .notNull()
-      .references(() => artists.id, { onDelete: "restrict" }),
+      .references(() => artists.id, { onDelete: "cascade" }),
     startDate: date("start_date"),
     endDate: date("end_date"),
   },
   (table) => [
-    primaryKey({ columns: [table.memberId, table.groupId] }),
+    primaryKey({
+      name: "artists_groups_pk",
+      columns: [table.memberId, table.groupId],
+    }),
     index("idx_artists_groups_reverse").on(table.groupId),
   ],
 );
@@ -235,6 +316,131 @@ export const albumsAlias = musicSchema.table(
   },
   (table) => [
     uniqueIndex("idx_album_alias_unique").on(table.albumId, table.alias),
+  ],
+);
+
+// ── Labels ──────────────────────────────────────
+
+export const labels = musicSchema.table(
+  "labels",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    sortName: text("sort_name"),
+    mbId: uuid("mb_id").unique(),
+    labelCode: text("label_code"),
+    type: labelTypeEnum("type"),
+    country: text("country"),
+    beginDate: date("begin_date"),
+    endDate: date("end_date"),
+    comment: text("comment"),
+    imageUrl: text("image_url"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("idx_labels_name").on(table.name),
+    index("idx_labels_country").on(table.country),
+  ],
+);
+
+export const albumLabels = musicSchema.table(
+  "album_labels",
+  {
+    albumId: uuid("album_id")
+      .notNull()
+      .references(() => albums.id, { onDelete: "cascade" }),
+    labelId: uuid("label_id")
+      .notNull()
+      .references(() => labels.id, { onDelete: "restrict" }),
+    catalogNumber: text("catalog_number"),
+  },
+  (table) => [
+    primaryKey({
+      name: "album_labels_pk",
+      columns: [table.albumId, table.labelId],
+    }),
+    index("idx_album_labels_reverse").on(table.labelId),
+  ],
+);
+
+// ── Genres ──────────────────────────────────────
+
+export const genres = musicSchema.table("genres", {
+  id: uuid("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull().unique(),
+  mbId: uuid("mb_id").unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const artistGenres = musicSchema.table(
+  "artist_genres",
+  {
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    genreId: uuid("genre_id")
+      .notNull()
+      .references(() => genres.id, { onDelete: "cascade" }),
+    count: integer("count").notNull().default(1),
+  },
+  (table) => [
+    primaryKey({
+      name: "artist_genres_pk",
+      columns: [table.artistId, table.genreId],
+    }),
+    index("idx_artist_genres_reverse").on(table.genreId),
+  ],
+);
+
+export const albumGenres = musicSchema.table(
+  "album_genres",
+  {
+    albumId: uuid("album_id")
+      .notNull()
+      .references(() => albums.id, { onDelete: "cascade" }),
+    genreId: uuid("genre_id")
+      .notNull()
+      .references(() => genres.id, { onDelete: "cascade" }),
+    count: integer("count").notNull().default(1),
+  },
+  (table) => [
+    primaryKey({
+      name: "album_genres_pk",
+      columns: [table.albumId, table.genreId],
+    }),
+    index("idx_album_genres_reverse").on(table.genreId),
+  ],
+);
+
+export const trackGenres = musicSchema.table(
+  "track_genres",
+  {
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    genreId: uuid("genre_id")
+      .notNull()
+      .references(() => genres.id, { onDelete: "cascade" }),
+    count: integer("count").notNull().default(1),
+  },
+  (table) => [
+    primaryKey({
+      name: "track_genres_pk",
+      columns: [table.trackId, table.genreId],
+    }),
+    index("idx_track_genres_reverse").on(table.genreId),
   ],
 );
 
@@ -330,11 +536,16 @@ export const providerSyncState = musicSchema.table(
       .defaultNow()
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
+      .$defaultFn(() => new Date())
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [primaryKey({ columns: [table.userId, table.provider] })],
+  (table) => [
+    primaryKey({
+      name: "provider_sync_state_pk",
+      columns: [table.userId, table.provider],
+    }),
+  ],
 );
 
 export const importJobs = musicSchema.table(
@@ -350,7 +561,7 @@ export const importJobs = musicSchema.table(
     fileHash: text("file_hash").notNull(),
     fileSize: bigint("file_size", { mode: "number" }).notNull(),
     filePath: text("file_path").notNull(),
-    status: jobStatusEnum("status").notNull().default("Queued"),
+    status: jobStatusEnum("status").notNull().default("queued"),
     totalRecords: integer("total_records"),
     importedRecords: integer("imported_records").notNull().default(0),
     failedRecords: integer("failed_records").notNull().default(0),
@@ -383,7 +594,7 @@ export const enrichmentJobs = musicSchema.table(
     trackId: uuid("track_id").references(() => tracks.id, {
       onDelete: "cascade",
     }),
-    status: jobStatusEnum("status").notNull().default("Queued"),
+    status: jobStatusEnum("status").notNull().default("queued"),
     priority: integer("priority").notNull().default(0),
     retryCount: integer("retry_count").notNull().default(0),
     maxRetries: integer("max_retries").notNull().default(3),
@@ -397,13 +608,13 @@ export const enrichmentJobs = musicSchema.table(
   (table) => [
     uniqueIndex("idx_enrichment_artist")
       .on(table.artistId)
-      .where(sql`${table.status} in ('Queued', 'Processing')`),
+      .where(sql`${table.status} in ('queued', 'processing')`),
     uniqueIndex("idx_enrichment_album")
       .on(table.albumId)
-      .where(sql`${table.status} in ('Queued', 'Processing')`),
+      .where(sql`${table.status} in ('queued', 'processing')`),
     uniqueIndex("idx_enrichment_track")
       .on(table.trackId)
-      .where(sql`${table.status} in ('Queued', 'Processing')`),
+      .where(sql`${table.status} in ('queued', 'processing')`),
     index("idx_enrichment_queue").on(table.status, table.priority),
     index("idx_enrichment_status").on(table.status),
   ],
@@ -464,6 +675,7 @@ export const artistsRelations = relations(artists, ({ many }) => ({
   providerMappings: many(providerArtistMappings),
   memberOf: many(artistsGroups, { relationName: "member" }),
   groups: many(artistsGroups, { relationName: "group" }),
+  genres: many(artistGenres),
   enrichmentJobs: many(enrichmentJobs),
 }));
 
@@ -471,6 +683,8 @@ export const albumsRelations = relations(albums, ({ many }) => ({
   trackAlbums: many(trackAlbums),
   albumArtists: many(albumArtists),
   aliases: many(albumsAlias),
+  labels: many(albumLabels),
+  genres: many(albumGenres),
   providerMappings: many(providerAlbumMappings),
   plays: many(plays),
   enrichmentJobs: many(enrichmentJobs),
@@ -480,6 +694,7 @@ export const tracksRelations = relations(tracks, ({ many }) => ({
   trackArtists: many(trackArtists),
   trackAlbums: many(trackAlbums),
   aliases: many(tracksAlias),
+  genres: many(trackGenres),
   providerMappings: many(providerTrackMappings),
   plays: many(plays),
   enrichmentJobs: many(enrichmentJobs),
@@ -549,6 +764,60 @@ export const albumsAliasRelations = relations(albumsAlias, ({ one }) => ({
   album: one(albums, {
     fields: [albumsAlias.albumId],
     references: [albums.id],
+  }),
+}));
+
+export const labelsRelations = relations(labels, ({ many }) => ({
+  albums: many(albumLabels),
+}));
+
+export const albumLabelsRelations = relations(albumLabels, ({ one }) => ({
+  album: one(albums, {
+    fields: [albumLabels.albumId],
+    references: [albums.id],
+  }),
+  label: one(labels, {
+    fields: [albumLabels.labelId],
+    references: [labels.id],
+  }),
+}));
+
+export const genresRelations = relations(genres, ({ many }) => ({
+  artists: many(artistGenres),
+  albums: many(albumGenres),
+  tracks: many(trackGenres),
+}));
+
+export const artistGenresRelations = relations(artistGenres, ({ one }) => ({
+  artist: one(artists, {
+    fields: [artistGenres.artistId],
+    references: [artists.id],
+  }),
+  genre: one(genres, {
+    fields: [artistGenres.genreId],
+    references: [genres.id],
+  }),
+}));
+
+export const albumGenresRelations = relations(albumGenres, ({ one }) => ({
+  album: one(albums, {
+    fields: [albumGenres.albumId],
+    references: [albums.id],
+  }),
+  genre: one(genres, {
+    fields: [albumGenres.genreId],
+    references: [genres.id],
+  }),
+}));
+
+export const trackGenresRelations = relations(trackGenres, ({ one }) => ({
+  track: one(tracks, {
+    fields: [trackGenres.trackId],
+    references: [tracks.id],
+  }),
+  genre: one(genres, {
+    fields: [trackGenres.genreId],
+    references: [genres.id],
   }),
 }));
 

@@ -20,10 +20,10 @@
   />
 {:else}
   <div
-    class="flex items-center justify-center rounded-full bg-neutral-800 {className}"
+    class="flex items-center justify-center rounded-full bg-pb-bg-surface-hover {className}"
     role="img"
     aria-label={alt}
   >
-    <User class="h-1/2 w-1/2 text-neutral-500" />
+    <User class="h-1/2 w-1/2 text-pb-text-muted" />
   </div>
 {/if}
