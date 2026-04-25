@@ -14,6 +14,7 @@
   import ToggleCard from "$lib/components/ToggleCard.svelte";
   import SettingsSelect from "$lib/components/SettingsSelect.svelte";
   import SettingsRadioGroup from "$lib/components/SettingsRadioGroup.svelte";
+  import ThemeSwitcher from "$lib/components/ThemeSwitcher.svelte";
 
   let { data } = $props();
 
@@ -40,6 +41,7 @@
   let isPublic = $state(data.user.isPublic ?? false);
   let locale = $state(data.user.locale);
   let timeFormat = $state(data.user.timeFormat);
+  let theme = $state(data.user.theme);
 
   // Track the saved username to detect changes
   const savedUsername = $derived(data.user.username);
@@ -269,6 +271,8 @@
     bind:value={timeFormat}
     options={timeFormatOptions}
   />
+
+  <ThemeSwitcher bind:value={theme} />
 
   <hr class="my-6 border-pb-border" />
 

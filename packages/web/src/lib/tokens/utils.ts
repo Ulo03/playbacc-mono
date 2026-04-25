@@ -44,3 +44,18 @@ export function themeToCSS(theme: Theme): string {
   cssCache.set(theme.id, css);
   return css;
 }
+
+export function applyTheme(theme: Theme): void {
+  if (typeof document === "undefined") return;
+
+  const root = document.documentElement;
+  for (const [key, value] of Object.entries(theme.colors)) {
+    root.style.setProperty(`--color-${camelToKebab(key)}`, value);
+  }
+  root.style.colorScheme = theme.colorScheme;
+
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta instanceof HTMLMetaElement) {
+    meta.content = theme.colors.bg;
+  }
+}
