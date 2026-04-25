@@ -22,10 +22,15 @@ export const LocaleSchema = v.picklist(["en", "de"]);
 export const SUPPORTED_TIME_FORMATS = ["12h", "24h"] as const;
 export const TimeFormatSchema = v.picklist(SUPPORTED_TIME_FORMATS);
 
+export const SUPPORTED_THEMES = ["dark", "midnight", "emerald"] as const;
+export const ThemeIdSchema = v.picklist(SUPPORTED_THEMES);
+export type ThemeId = v.InferOutput<typeof ThemeIdSchema>;
+
 export const UpdateProfileSchema = v.object({
   username: v.optional(UsernameSchema),
   name: v.optional(NameSchema),
   isPublic: v.optional(v.boolean()),
   locale: v.optional(LocaleSchema),
   timeFormat: v.optional(TimeFormatSchema),
+  theme: v.optional(ThemeIdSchema),
 });

@@ -54,6 +54,7 @@ CREATE TABLE "user" (
 	"is_public" boolean DEFAULT false,
 	"locale" text DEFAULT 'en' NOT NULL,
 	"time_format" text DEFAULT '12h' NOT NULL,
+	"theme" text DEFAULT 'dark' NOT NULL,
 	CONSTRAINT "user_email_unique" UNIQUE("email"),
 	CONSTRAINT "user_username_unique" UNIQUE("username")
 );

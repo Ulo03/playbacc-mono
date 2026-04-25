@@ -43,6 +43,10 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: "12h",
       },
+      theme: {
+        type: "string",
+        defaultValue: "dark",
+      },
     },
   },
 

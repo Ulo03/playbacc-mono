@@ -21,6 +21,7 @@ export const user = pgTable("user", {
   isPublic: boolean("is_public").default(false),
   locale: text("locale").default("en").notNull(),
   timeFormat: text("time_format").default("12h").notNull(),
+  theme: text("theme").default("dark").notNull(),
 });
 
 export const session = pgTable(
