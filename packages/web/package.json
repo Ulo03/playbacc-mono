@@ -26,7 +26,6 @@
     "hono": "^4.12.15",
     "layerchart": "^2.0.0-next.59",
     "lucide-svelte": "^1.0.1",
-    "mode-watcher": "^1.1.0",
     "svelte-sonner": "^1.1.1",
     "valibot": "^1.3.1"
   },

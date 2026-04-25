@@ -87,9 +87,13 @@ The Vite plugin (`boneyardPlugin()`) integrates into the SvelteKit Vite config s
 
 `lucide-svelte` — 1,500+ consistent stroke icons, tree-shakable, official Svelte package. Used throughout the dashboard UI.
 
-### mode-watcher
+### Theming
 
-Manages dark mode state. Syncs `prefers-color-scheme` with a `.dark` class on the root element. Integrates with UnoCSS's dark mode variant and Boneyard's automatic `darkColor` prop.
+Multi-theme system based on CSS custom properties. The `packages/web/src/lib/tokens/` module exports a small set of `Theme` objects (currently `dark`, `midnight`, `emerald`) — each defines a flat `ThemeColors` palette (background, surface, primary, text, status colors, focus ring).
+
+A SvelteKit hook (`handleTheme` in `hooks.server.ts`) resolves the active theme per request, renders its palette as a `<style data-pb-theme>` block on `<html>` via the `%pb.theme.style%` template token in `app.html`, and also emits the `theme-color` `<meta>` for mobile chrome. UnoCSS exposes the palette as `pb-*` utility classes (`bg-pb-bg-surface`, `text-pb-text-secondary`, `border-pb-border`, etc.) that resolve to `var(--color-*)` — so a single CSS variable swap reskins the whole app without re-rendering Svelte components or shipping per-theme stylesheets.
+
+Theme choice is persisted on the user record (Better Auth `additionalFields`) and falls back to a cookie for anonymous visitors. `prefers-color-scheme` is not consulted — themes are a personality choice, not a brightness toggle. Each theme declares a `colorScheme` field (`"light" | "dark"`) that drives the CSS `color-scheme` property so native form controls and scrollbars match.
 
 ### svelte-sonner
 
