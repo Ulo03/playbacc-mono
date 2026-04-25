@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-playbacc}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-playbacc}
+      POSTGRES_DB: ${DB_NAME:-playbacc}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-playbacc} -d ${DB_NAME:-playbacc}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-64mb}
+      - --maxmemory-policy
+      - noeviction
+      - --appendonly
+      - "yes"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  playbacc-api:
+    image: playbacc-api:${PLAYBACC_TAG:-local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-playbacc}
+      DB_PASSWORD: ${DB_PASSWORD:-playbacc}
+      DB_NAME: ${DB_NAME:-playbacc}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:?SPOTIFY_CLIENT_ID is required}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:?SPOTIFY_CLIENT_SECRET is required}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      API_URL: ${API_URL:-http://127.0.0.1:3000}
+      WEB_URL: ${WEB_URL:-http://127.0.0.1:5173}
+    ports:
+      - "${API_PORT:-3000}:3000"
+
+  playbacc-web:
+    image: playbacc-web:${PLAYBACC_TAG:-local}
+    restart: unless-stopped
+    depends_on:
+      - playbacc-api
+    environment:
+      NODE_ENV: production
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://127.0.0.1:3000}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://127.0.0.1:5173}
+      ORIGIN: ${PUBLIC_WEB_URL:-http://127.0.0.1:5173}
+    ports:
+      - "${WEB_PORT:-5173}:3000"
+
+volumes:
+  pgdata:
+  redisdata:
