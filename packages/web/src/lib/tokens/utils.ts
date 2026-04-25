@@ -11,8 +11,8 @@ const themes: Record<ThemeId, Theme> = {
 
 export const defaultThemeId: ThemeId = "dark";
 
-export function getTheme(id: ThemeId | null | undefined): Theme {
-  if (id && id in themes) return themes[id];
+export function getTheme(id: string | null | undefined): Theme {
+  if (id && id in themes) return themes[id as ThemeId];
   return themes[defaultThemeId];
 }
 

@@ -9,8 +9,9 @@ import { getTheme, themeToCSS } from "$lib/tokens";
 const API_URL = process.env.PUBLIC_API_URL ?? "http://127.0.0.1:3000";
 
 const handleTheme: Handle = ({ event, resolve }) => {
-  // TODO: read from event.locals.user.theme once the column is added.
-  const theme = getTheme(null);
+  const themeId =
+    event.locals.user?.theme ?? event.cookies.get("pb-theme") ?? null;
+  const theme = getTheme(themeId);
   const styleBlock = `<style data-pb-theme="${theme.id}">${themeToCSS(theme)}</style>`;
 
   return resolve(event, {

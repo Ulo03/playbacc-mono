@@ -1,6 +1,8 @@
-export type ColorScheme = "light" | "dark";
+import type { ThemeId } from "@playbacc/shared";
 
-export type ThemeId = "dark" | "midnight" | "emerald";
+export type { ThemeId };
+
+export type ColorScheme = "light" | "dark";
 
 export type ThemeColors = {
   bg: string;
