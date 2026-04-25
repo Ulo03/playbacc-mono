@@ -1,7 +1,12 @@
 CREATE SCHEMA "music";
 --> statement-breakpoint
-CREATE TYPE "music"."account_provider" AS ENUM('Spotify');--> statement-breakpoint
-CREATE TYPE "music"."job_status" AS ENUM('Queued', 'Processing', 'Completed', 'Failed', 'Cancelled');--> statement-breakpoint
+CREATE TYPE "music"."account_provider" AS ENUM('spotify');--> statement-breakpoint
+CREATE TYPE "music"."album_primary_type" AS ENUM('album', 'single', 'ep', 'broadcast', 'other');--> statement-breakpoint
+CREATE TYPE "music"."album_secondary_type" AS ENUM('compilation', 'soundtrack', 'spokenword', 'interview', 'audiobook', 'audio_drama', 'live', 'remix', 'dj_mix', 'mixtape', 'demo', 'field_recording');--> statement-breakpoint
+CREATE TYPE "music"."artist_gender" AS ENUM('male', 'female', 'other', 'not_applicable');--> statement-breakpoint
+CREATE TYPE "music"."artist_type" AS ENUM('person', 'group', 'orchestra', 'choir', 'character', 'other');--> statement-breakpoint
+CREATE TYPE "music"."job_status" AS ENUM('queued', 'processing', 'completed', 'failed', 'cancelled');--> statement-breakpoint
+CREATE TYPE "music"."label_type" AS ENUM('imprint', 'original_production', 'bootleg_production', 'reissue_production', 'distributor', 'holding', 'rights_society');--> statement-breakpoint
 CREATE TYPE "music"."sync_status" AS ENUM('idle', 'syncing', 'failed');--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
@@ -70,7 +75,7 @@ CREATE TABLE "app_settings" (
 CREATE TABLE "invites" (
 	"id" text PRIMARY KEY NOT NULL,
 	"email" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "invites_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -79,17 +84,37 @@ CREATE TABLE "music"."album_artists" (
 	"artist_id" uuid NOT NULL,
 	"is_primary" boolean DEFAULT true NOT NULL,
 	"order" integer NOT NULL,
-	CONSTRAINT "album_artists_album_id_artist_id_pk" PRIMARY KEY("album_id","artist_id")
+	"join_phrase" text,
+	CONSTRAINT "album_artists_pk" PRIMARY KEY("album_id","artist_id")
+);
+--> statement-breakpoint
+CREATE TABLE "music"."album_genres" (
+	"album_id" uuid NOT NULL,
+	"genre_id" uuid NOT NULL,
+	"count" integer DEFAULT 1 NOT NULL,
+	CONSTRAINT "album_genres_pk" PRIMARY KEY("album_id","genre_id")
+);
+--> statement-breakpoint
+CREATE TABLE "music"."album_labels" (
+	"album_id" uuid NOT NULL,
+	"label_id" uuid NOT NULL,
+	"catalog_number" text,
+	CONSTRAINT "album_labels_pk" PRIMARY KEY("album_id","label_id")
 );
 --> statement-breakpoint
 CREATE TABLE "music"."albums" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"title" text NOT NULL,
 	"release_date" date,
+	"first_release_date" date,
+	"primary_type" "music"."album_primary_type",
+	"secondary_types" "music"."album_secondary_type"[],
+	"country" text,
 	"mb_id" uuid,
 	"image_url" text,
+	"comment" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "albums_mb_id_unique" UNIQUE("mb_id")
 );
 --> statement-breakpoint
@@ -102,14 +127,27 @@ CREATE TABLE "music"."albums_alias" (
 	"locale" text
 );
 --> statement-breakpoint
+CREATE TABLE "music"."artist_genres" (
+	"artist_id" uuid NOT NULL,
+	"genre_id" uuid NOT NULL,
+	"count" integer DEFAULT 1 NOT NULL,
+	CONSTRAINT "artist_genres_pk" PRIMARY KEY("artist_id","genre_id")
+);
+--> statement-breakpoint
 CREATE TABLE "music"."artists" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"sort_name" text,
 	"mb_id" uuid,
 	"image_url" text,
+	"type" "music"."artist_type",
+	"gender" "music"."artist_gender",
+	"country" text,
+	"begin_date" date,
+	"end_date" date,
+	"comment" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "artists_mb_id_unique" UNIQUE("mb_id")
 );
 --> statement-breakpoint
@@ -127,7 +165,7 @@ CREATE TABLE "music"."artists_groups" (
 	"group_id" uuid NOT NULL,
 	"start_date" date,
 	"end_date" date,
-	CONSTRAINT "artists_groups_member_id_group_id_pk" PRIMARY KEY("member_id","group_id")
+	CONSTRAINT "artists_groups_pk" PRIMARY KEY("member_id","group_id")
 );
 --> statement-breakpoint
 CREATE TABLE "music"."enrichment_jobs" (
@@ -135,7 +173,7 @@ CREATE TABLE "music"."enrichment_jobs" (
 	"artist_id" uuid,
 	"album_id" uuid,
 	"track_id" uuid,
-	"status" "music"."job_status" DEFAULT 'Queued' NOT NULL,
+	"status" "music"."job_status" DEFAULT 'queued' NOT NULL,
 	"priority" integer DEFAULT 0 NOT NULL,
 	"retry_count" integer DEFAULT 0 NOT NULL,
 	"max_retries" integer DEFAULT 3 NOT NULL,
@@ -145,6 +183,15 @@ CREATE TABLE "music"."enrichment_jobs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "music"."genres" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"mb_id" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "genres_name_unique" UNIQUE("name"),
+	CONSTRAINT "genres_mb_id_unique" UNIQUE("mb_id")
+);
+--> statement-breakpoint
 CREATE TABLE "music"."import_jobs" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
@@ -152,7 +199,7 @@ CREATE TABLE "music"."import_jobs" (
 	"file_hash" text NOT NULL,
 	"file_size" bigint NOT NULL,
 	"file_path" text NOT NULL,
-	"status" "music"."job_status" DEFAULT 'Queued' NOT NULL,
+	"status" "music"."job_status" DEFAULT 'queued' NOT NULL,
 	"total_records" integer,
 	"imported_records" integer DEFAULT 0 NOT NULL,
 	"failed_records" integer DEFAULT 0 NOT NULL,
@@ -160,6 +207,23 @@ CREATE TABLE "music"."import_jobs" (
 	"started_at" timestamp with time zone,
 	"completed_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "music"."labels" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"sort_name" text,
+	"mb_id" uuid,
+	"label_code" text,
+	"type" "music"."label_type",
+	"country" text,
+	"begin_date" date,
+	"end_date" date,
+	"comment" text,
+	"image_url" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "labels_mb_id_unique" UNIQUE("mb_id")
 );
 --> statement-breakpoint
 CREATE TABLE "music"."plays" (
@@ -199,8 +263,8 @@ CREATE TABLE "music"."provider_sync_state" (
 	"last_synced_at" timestamp with time zone,
 	"sync_status" "music"."sync_status" DEFAULT 'idle' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "provider_sync_state_user_id_provider_pk" PRIMARY KEY("user_id","provider")
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "provider_sync_state_pk" PRIMARY KEY("user_id","provider")
 );
 --> statement-breakpoint
 CREATE TABLE "music"."provider_track_mappings" (
@@ -217,7 +281,7 @@ CREATE TABLE "music"."track_albums" (
 	"album_id" uuid NOT NULL,
 	"disc_number" integer,
 	"position" integer,
-	CONSTRAINT "track_albums_track_id_album_id_pk" PRIMARY KEY("track_id","album_id")
+	CONSTRAINT "track_albums_pk" PRIMARY KEY("track_id","album_id")
 );
 --> statement-breakpoint
 CREATE TABLE "music"."track_artists" (
@@ -226,7 +290,14 @@ CREATE TABLE "music"."track_artists" (
 	"is_primary" boolean DEFAULT true NOT NULL,
 	"order" integer NOT NULL,
 	"join_phrase" text,
-	CONSTRAINT "track_artists_track_id_artist_id_pk" PRIMARY KEY("track_id","artist_id")
+	CONSTRAINT "track_artists_pk" PRIMARY KEY("track_id","artist_id")
+);
+--> statement-breakpoint
+CREATE TABLE "music"."track_genres" (
+	"track_id" uuid NOT NULL,
+	"genre_id" uuid NOT NULL,
+	"count" integer DEFAULT 1 NOT NULL,
+	CONSTRAINT "track_genres_pk" PRIMARY KEY("track_id","genre_id")
 );
 --> statement-breakpoint
 CREATE TABLE "music"."tracks" (
@@ -236,8 +307,9 @@ CREATE TABLE "music"."tracks" (
 	"mb_id" uuid,
 	"isrc" text,
 	"explicit" boolean NOT NULL,
+	"comment" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "tracks_mb_id_unique" UNIQUE("mb_id"),
 	CONSTRAINT "tracks_isrc_unique" UNIQUE("isrc")
 );
@@ -255,10 +327,16 @@ ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."album_artists" ADD CONSTRAINT "album_artists_album_id_albums_id_fk" FOREIGN KEY ("album_id") REFERENCES "music"."albums"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."album_artists" ADD CONSTRAINT "album_artists_artist_id_artists_id_fk" FOREIGN KEY ("artist_id") REFERENCES "music"."artists"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."album_genres" ADD CONSTRAINT "album_genres_album_id_albums_id_fk" FOREIGN KEY ("album_id") REFERENCES "music"."albums"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."album_genres" ADD CONSTRAINT "album_genres_genre_id_genres_id_fk" FOREIGN KEY ("genre_id") REFERENCES "music"."genres"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."album_labels" ADD CONSTRAINT "album_labels_album_id_albums_id_fk" FOREIGN KEY ("album_id") REFERENCES "music"."albums"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."album_labels" ADD CONSTRAINT "album_labels_label_id_labels_id_fk" FOREIGN KEY ("label_id") REFERENCES "music"."labels"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."albums_alias" ADD CONSTRAINT "albums_alias_album_id_albums_id_fk" FOREIGN KEY ("album_id") REFERENCES "music"."albums"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."artist_genres" ADD CONSTRAINT "artist_genres_artist_id_artists_id_fk" FOREIGN KEY ("artist_id") REFERENCES "music"."artists"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."artist_genres" ADD CONSTRAINT "artist_genres_genre_id_genres_id_fk" FOREIGN KEY ("genre_id") REFERENCES "music"."genres"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."artists_alias" ADD CONSTRAINT "artists_alias_artist_id_artists_id_fk" FOREIGN KEY ("artist_id") REFERENCES "music"."artists"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."artists_groups" ADD CONSTRAINT "artists_groups_member_id_artists_id_fk" FOREIGN KEY ("member_id") REFERENCES "music"."artists"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "music"."artists_groups" ADD CONSTRAINT "artists_groups_group_id_artists_id_fk" FOREIGN KEY ("group_id") REFERENCES "music"."artists"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."artists_groups" ADD CONSTRAINT "artists_groups_group_id_artists_id_fk" FOREIGN KEY ("group_id") REFERENCES "music"."artists"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."enrichment_jobs" ADD CONSTRAINT "enrichment_jobs_artist_id_artists_id_fk" FOREIGN KEY ("artist_id") REFERENCES "music"."artists"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."enrichment_jobs" ADD CONSTRAINT "enrichment_jobs_album_id_albums_id_fk" FOREIGN KEY ("album_id") REFERENCES "music"."albums"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."enrichment_jobs" ADD CONSTRAINT "enrichment_jobs_track_id_tracks_id_fk" FOREIGN KEY ("track_id") REFERENCES "music"."tracks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -275,25 +353,35 @@ ALTER TABLE "music"."track_albums" ADD CONSTRAINT "track_albums_track_id_tracks_
 ALTER TABLE "music"."track_albums" ADD CONSTRAINT "track_albums_album_id_albums_id_fk" FOREIGN KEY ("album_id") REFERENCES "music"."albums"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."track_artists" ADD CONSTRAINT "track_artists_track_id_tracks_id_fk" FOREIGN KEY ("track_id") REFERENCES "music"."tracks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."track_artists" ADD CONSTRAINT "track_artists_artist_id_artists_id_fk" FOREIGN KEY ("artist_id") REFERENCES "music"."artists"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."track_genres" ADD CONSTRAINT "track_genres_track_id_tracks_id_fk" FOREIGN KEY ("track_id") REFERENCES "music"."tracks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "music"."track_genres" ADD CONSTRAINT "track_genres_genre_id_genres_id_fk" FOREIGN KEY ("genre_id") REFERENCES "music"."genres"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "music"."tracks_alias" ADD CONSTRAINT "tracks_alias_track_id_tracks_id_fk" FOREIGN KEY ("track_id") REFERENCES "music"."tracks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");--> statement-breakpoint
 CREATE INDEX "idx_album_artists_reverse" ON "music"."album_artists" USING btree ("artist_id");--> statement-breakpoint
+CREATE INDEX "idx_album_genres_reverse" ON "music"."album_genres" USING btree ("genre_id");--> statement-breakpoint
+CREATE INDEX "idx_album_labels_reverse" ON "music"."album_labels" USING btree ("label_id");--> statement-breakpoint
 CREATE INDEX "idx_albums_title" ON "music"."albums" USING btree ("title");--> statement-breakpoint
+CREATE INDEX "idx_albums_primary_type" ON "music"."albums" USING btree ("primary_type");--> statement-breakpoint
+CREATE INDEX "idx_albums_first_release" ON "music"."albums" USING btree ("first_release_date");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_album_alias_unique" ON "music"."albums_alias" USING btree ("album_id","alias");--> statement-breakpoint
+CREATE INDEX "idx_artist_genres_reverse" ON "music"."artist_genres" USING btree ("genre_id");--> statement-breakpoint
 CREATE INDEX "idx_artists_name" ON "music"."artists" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "idx_artists_country" ON "music"."artists" USING btree ("country");--> statement-breakpoint
 CREATE INDEX "idx_artist_alias_search" ON "music"."artists_alias" USING btree ("alias");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_artist_alias_unique" ON "music"."artists_alias" USING btree ("artist_id","alias");--> statement-breakpoint
 CREATE INDEX "idx_artists_groups_reverse" ON "music"."artists_groups" USING btree ("group_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "idx_enrichment_artist" ON "music"."enrichment_jobs" USING btree ("artist_id") WHERE "music"."enrichment_jobs"."status" in ('Queued', 'Processing');--> statement-breakpoint
-CREATE UNIQUE INDEX "idx_enrichment_album" ON "music"."enrichment_jobs" USING btree ("album_id") WHERE "music"."enrichment_jobs"."status" in ('Queued', 'Processing');--> statement-breakpoint
-CREATE UNIQUE INDEX "idx_enrichment_track" ON "music"."enrichment_jobs" USING btree ("track_id") WHERE "music"."enrichment_jobs"."status" in ('Queued', 'Processing');--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_enrichment_artist" ON "music"."enrichment_jobs" USING btree ("artist_id") WHERE "music"."enrichment_jobs"."status" in ('queued', 'processing');--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_enrichment_album" ON "music"."enrichment_jobs" USING btree ("album_id") WHERE "music"."enrichment_jobs"."status" in ('queued', 'processing');--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_enrichment_track" ON "music"."enrichment_jobs" USING btree ("track_id") WHERE "music"."enrichment_jobs"."status" in ('queued', 'processing');--> statement-breakpoint
 CREATE INDEX "idx_enrichment_queue" ON "music"."enrichment_jobs" USING btree ("status","priority");--> statement-breakpoint
 CREATE INDEX "idx_enrichment_status" ON "music"."enrichment_jobs" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "idx_imports_user" ON "music"."import_jobs" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_imports_user_file_hash" ON "music"."import_jobs" USING btree ("user_id","file_hash");--> statement-breakpoint
 CREATE INDEX "idx_imports_status" ON "music"."import_jobs" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "idx_labels_name" ON "music"."labels" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "idx_labels_country" ON "music"."labels" USING btree ("country");--> statement-breakpoint
 CREATE UNIQUE INDEX "no_duplicate_scrobbles" ON "music"."plays" USING btree ("user_id","track_id","played_at") WHERE "music"."plays"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "idx_plays_user_time" ON "music"."plays" USING btree ("user_id","played_at") WHERE "music"."plays"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "idx_plays_album" ON "music"."plays" USING btree ("album_id") WHERE "music"."plays"."deleted_at" is null;--> statement-breakpoint
@@ -308,5 +396,6 @@ CREATE UNIQUE INDEX "idx_provider_track_unique" ON "music"."provider_track_mappi
 CREATE INDEX "idx_track_provider" ON "music"."provider_track_mappings" USING btree ("track_id","provider");--> statement-breakpoint
 CREATE INDEX "idx_track_albums_reverse" ON "music"."track_albums" USING btree ("album_id");--> statement-breakpoint
 CREATE INDEX "idx_track_artists_reverse" ON "music"."track_artists" USING btree ("artist_id");--> statement-breakpoint
+CREATE INDEX "idx_track_genres_reverse" ON "music"."track_genres" USING btree ("genre_id");--> statement-breakpoint
 CREATE INDEX "idx_tracks_title" ON "music"."tracks" USING btree ("title");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_track_alias_unique" ON "music"."tracks_alias" USING btree ("track_id","alias");
