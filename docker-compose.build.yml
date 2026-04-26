@@ -1,0 +1,19 @@
+services:
+  playbacc-api:
+    image: playbacc-api:${PLAYBACC_TAG:-local}
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+      args:
+        VERSION: ${VERSION:-0.0.0}
+
+  playbacc-web:
+    image: playbacc-web:${PLAYBACC_TAG:-local}
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile
+      args:
+        VERSION: ${VERSION:-0.0.0}
+        # PUBLIC_* vars are baked into the SvelteKit build at compile time.
+        PUBLIC_API_URL: ${PUBLIC_API_URL:-http://127.0.0.1:3000}
+        PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://127.0.0.1:5173}
