@@ -29,15 +29,33 @@ ENV PUBLIC_WEB_URL=${PUBLIC_WEB_URL}
 RUN bun --filter @playbacc/web build
 
 
-FROM node:22-alpine AS runner
+# Production deps (no devDependencies) for the runner image
+FROM oven/bun:${BUN_VERSION}-alpine AS deps-prod
+WORKDIR /app
+COPY package.json bun.lock ./
+COPY scripts/postinstall.ts scripts/postinstall.ts
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/web/package.json packages/web/package.json
+COPY packages/api/package.json packages/api/package.json
+RUN bun install --frozen-lockfile --production
+
+
+FROM oven/bun:${BUN_VERSION}-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
 # Non-root user
 RUN addgroup -S app && adduser -S app -G app
 
+# adapter-node bundles app code, but externalizes runtime deps (valibot, etc).
+# Bun resolves them via its install layout. Workspace packages (@playbacc/shared)
+# are symlinked into packages/shared, so we ship that too.
+COPY --from=deps-prod /app/node_modules ./node_modules
+COPY --from=deps-prod /app/package.json ./package.json
+COPY --from=builder /app/packages/shared ./packages/shared
+COPY --from=builder /app/packages/web/package.json ./packages/web/package.json
 COPY --from=builder /app/packages/web/build ./build
 
 USER app
 EXPOSE 3000
-CMD ["node", "build/index.js"]
+CMD ["bun", "build/index.js"]
