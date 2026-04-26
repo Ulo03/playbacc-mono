@@ -47,15 +47,19 @@ ENV NODE_ENV=production
 # Non-root user
 RUN addgroup -S app && adduser -S app -G app
 
-# adapter-node bundles app code, but externalizes runtime deps (valibot, etc).
-# Bun resolves them via its install layout. Workspace packages (@playbacc/shared)
-# are symlinked into packages/shared, so we ship that too.
-COPY --from=deps-prod /app/node_modules ./node_modules
+# adapter-node externalizes runtime deps — they must be present at runtime.
+# Bun's isolated install layout uses two levels:
+#   /app/node_modules/.bun/<pkg>@<ver>/...   — the actual package contents
+#   /app/packages/web/node_modules/<pkg>     — symlinks the web package consumes
+# The build entrypoint must run from packages/web so bun walks up to find them.
 COPY --from=deps-prod /app/package.json ./package.json
+COPY --from=deps-prod /app/node_modules ./node_modules
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/packages/web/package.json ./packages/web/package.json
-COPY --from=builder /app/packages/web/build ./build
+COPY --from=deps-prod /app/packages/web/node_modules ./packages/web/node_modules
+COPY --from=builder /app/packages/web/build ./packages/web/build
 
+WORKDIR /app/packages/web
 USER app
 EXPOSE 3000
 CMD ["bun", "build/index.js"]
