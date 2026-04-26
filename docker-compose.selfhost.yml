@@ -64,7 +64,9 @@ services:
       - playbacc-api
     environment:
       NODE_ENV: production
-      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://127.0.0.1:3000}
+      # Server-side SSR fetches reach the api via the docker network hostname.
+      # Browser-side calls use the build-time PUBLIC_API_URL baked by docker-compose.build.yml.
+      PUBLIC_API_URL: http://playbacc-api:3000
       PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://127.0.0.1:5173}
       ORIGIN: ${PUBLIC_WEB_URL:-http://127.0.0.1:5173}
     ports:

@@ -15,6 +15,7 @@ COPY packages/api/package.json packages/api/package.json
 RUN bun install --frozen-lockfile
 
 # Build web
+COPY tsconfig.json ./
 COPY packages/shared packages/shared
 COPY packages/web packages/web
 
